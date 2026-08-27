@@ -19,8 +19,22 @@ def find_matching_properties(lead: Lead) -> list[dict]:
         parameters.append(lead.city)
 
     if lead.property_type:
-        query += " AND property_type = ?"
-        parameters.append(lead.property_type)
+       property_type_map = {
+        "piso": "vivienda",
+        "apartamento": "vivienda",
+        "casa": "vivienda",
+        "chalet": "vivienda",
+        "vivienda": "vivienda",
+        "habitacion": "habitacion",
+    }
+
+       normalized_property_type = property_type_map.get(
+        lead.property_type.lower(),
+        lead.property_type.lower()
+    )
+
+       query += " AND property_type = ?"
+       parameters.append(normalized_property_type)
 
     if lead.max_price is not None:
         query += " AND price <= ?"

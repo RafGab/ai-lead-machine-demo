@@ -1,4 +1,11 @@
+import os
+
+from dotenv import load_dotenv
+from openai import OpenAI
 from pydantic import BaseModel
+
+
+load_dotenv(override=True)
 
 
 class AILeadData(BaseModel):
@@ -12,13 +19,82 @@ class AILeadData(BaseModel):
     has_pets: bool | None = None
 
 
+def get_openai_client() -> OpenAI:
+    """
+    Crea el cliente de OpenAI utilizando la API key
+    almacenada en el archivo .env.
+    """
+
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not api_key:
+        raise RuntimeError(
+            "OPENAI_API_KEY no está configurada en el archivo .env."
+        )
+
+    return OpenAI(api_key=api_key)
+
+
 def extract_lead_data(message: str) -> AILeadData:
     """
-    Analiza un mensaje del cliente y devuelve
-    los datos estructurados del lead.
+    Utiliza OpenAI para analizar el mensaje del cliente
+    y extraer los datos relevantes del lead.
 
-    Por ahora utilizamos una respuesta simulada.
-    Más adelante conectaremos aquí el modelo de IA.
+    Si un dato no aparece en el mensaje, devuelve None.
     """
 
-    return AILeadData()
+    client = get_openai_client()
+
+    response = client.responses.parse(
+        model="gpt-5.6-luna",
+        input=[
+            {
+                "role": "system",
+                "content": (
+                    "Eres un asistente especializado en captación "
+                    "de leads inmobiliarios.\n\n"
+
+                    "Analiza el mensaje del cliente y extrae "
+                    "únicamente información que esté presente "
+                    "o que pueda deducirse claramente del mensaje.\n\n"
+
+                    "No inventes información.\n"
+                    "Si un dato no está presente, devuelve None.\n\n"
+
+                    "Para operation utiliza únicamente:\n"
+                    "- alquiler\n"
+                    "- compra\n\n"
+
+                    "Para property_type utiliza valores como:\n"
+                    "- vivienda\n"
+                    "- piso\n"
+                    "- apartamento\n"
+                    "- casa\n"
+                    "- chalet\n"
+                    "- habitacion\n\n"
+
+                    "Si el cliente indica que NO tiene menores, "
+                    "has_minors debe ser False.\n"
+
+                    "Si el cliente indica que NO tiene mascotas, "
+                    "has_pets debe ser False.\n"
+
+                    "Si el cliente indica que sí tiene menores, "
+                    "has_minors debe ser True.\n"
+
+                    "Si el cliente indica que sí tiene mascotas, "
+                    "has_pets debe ser True.\n\n"
+
+                    "Para occupants utiliza el número de personas "
+                    "que vivirán en el inmueble cuando esté indicado."
+                ),
+            },
+            {
+                "role": "user",
+                "content": message,
+            },
+        ],
+        text_format=AILeadData,
+    )
+
+    return response.output_parsed
