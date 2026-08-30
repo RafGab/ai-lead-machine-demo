@@ -4,6 +4,7 @@ import './App.css'
 function App() {
   const [message, setMessage] = useState('')
   const [conversationId, setConversationId] = useState(null)
+  const [lead, setLead] = useState({})
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -49,6 +50,7 @@ function App() {
     const data = await response.json()
     
     setConversationId(data.conversation_id)
+    setLead(data.lead)
 
     setMessages((currentMessages) => [
       ...currentMessages,
@@ -201,37 +203,45 @@ function App() {
 
           <div className="lead-section">
             <span className="label">Operación</span>
-            <strong>Alquiler</strong>
+            <strong>{lead.operation || '—'}</strong>
           </div>
 
           <div className="lead-section">
             <span className="label">Tipo de inmueble</span>
-            <strong>Piso</strong>
+            <strong>{lead.property_type || '—'}</strong>
           </div>
 
           <div className="lead-section">
             <span className="label">Ciudad</span>
-            <strong>León</strong>
+            <strong>{lead.city || '—'}</strong>
           </div>
 
           <div className="lead-section">
             <span className="label">Presupuesto máximo</span>
-            <strong>900 €/mes</strong>
+             <strong>
+           {lead.max_price ? `${lead.max_price} €/mes` : '—'}
+             </strong>
           </div>
 
           <div className="lead-section">
             <span className="label">Entrada</span>
-            <strong>Septiembre</strong>
+            <strong>{lead.move_in_date || '—'}</strong>
           </div>
 
           <div className="lead-section">
             <span className="label">Personas</span>
-            <strong>2</strong>
+            <strong>{lead.occupants ?? '—'}</strong>
           </div>
 
           <div className="lead-section">
             <span className="label">Mascotas</span>
-            <strong>Sí 🐕</strong>
+            <strong>
+                   {lead.has_pets === true
+                    ? 'Sí 🐕'
+                  : lead.has_pets === false
+                  ? 'No'
+              : '—'}
+           </strong>
           </div>
 
 
