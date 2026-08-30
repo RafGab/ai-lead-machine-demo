@@ -1,0 +1,251 @@
+import { useState } from 'react'
+import './App.css'
+
+function App() {
+  const [message, setMessage] = useState('')
+  const [conversationId, setConversationId] = useState(null)
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content:
+        'Hola 👋 Soy tu agente de atención. Puedo ayudarte a encontrar la propiedad que necesitas.'
+    }
+  ])
+
+  const sendMessage = async () => {
+  if (!message.trim()) return
+
+  const userMessage = message
+
+  setMessages((currentMessages) => [
+    ...currentMessages,
+    {
+      role: 'user',
+      content: userMessage
+    }
+  ])
+
+  setMessage('')
+
+  try {
+    const response = await fetch(
+      'http://127.0.0.1:8000/conversations/message',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          conversation_id: conversationId
+     })
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error('Error al comunicarse con el servidor')
+    }
+
+    const data = await response.json()
+    
+    setConversationId(data.conversation_id)
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        role: 'assistant',
+        content: data.assistant_message
+      }
+    ])
+  } catch (error) {
+    console.error(error)
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        role: 'assistant',
+        content:
+          'Lo siento, ha ocurrido un problema al conectar con el agente.'
+      }
+    ])
+  }
+}
+
+  return (
+    <div className="app">
+
+      {/* BARRA SUPERIOR */}
+      <header className="topbar">
+        <div className="brand">
+          <div className="brand-mark">AI</div>
+          <div>
+            <strong>Agente IA</strong>
+            <span>Intelligent Lead Management</span>
+          </div>
+        </div>
+
+        <div className="agent-status">
+          <span className="status-dot"></span>
+          Agente activo
+        </div>
+      </header>
+
+
+      {/* CONTENIDO PRINCIPAL */}
+      <main className="dashboard">
+
+        {/* CONVERSACIONES */}
+        <aside className="conversations">
+          <div className="panel-title">
+            <h2>Conversaciones</h2>
+            <span>3</span>
+          </div>
+
+          <div className="conversation active">
+            <div className="avatar">CL</div>
+
+            <div className="conversation-info">
+              <strong>Cliente #001</strong>
+              <p>Busco un piso en León...</p>
+            </div>
+
+            <small>Ahora</small>
+          </div>
+
+          <div className="conversation">
+            <div className="avatar">MR</div>
+
+            <div className="conversation-info">
+              <strong>Cliente #002</strong>
+              <p>Quería información sobre...</p>
+            </div>
+
+            <small>10:42</small>
+          </div>
+
+          <div className="conversation">
+            <div className="avatar">AP</div>
+
+            <div className="conversation-info">
+              <strong>Cliente #003</strong>
+              <p>¿Aceptan mascotas?</p>
+            </div>
+
+            <small>Ayer</small>
+          </div>
+        </aside>
+
+
+        {/* CHAT */}
+        <section className="chat">
+
+          <div className="chat-header">
+            <div>
+              <h2>Cliente #001</h2>
+              <p>Conversación con agente IA</p>
+            </div>
+
+            <span className="lead-badge">
+              Lead activo
+            </span>
+          </div>
+
+
+          <div className="messages">
+
+            {messages.map((item, index) => (
+              <div
+                key={index}
+                className={`message ${item.role}`}
+              >
+                <div className="message-bubble">
+                  {item.content}
+                </div>
+              </div>
+            ))}
+
+          </div>
+
+
+          <div className="message-input">
+
+            <input
+              type="text"
+              placeholder="Escribe un mensaje..."
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  sendMessage()
+                }
+              }}
+            />
+
+            <button onClick={sendMessage}>
+              Enviar
+            </button>
+
+          </div>
+
+        </section>
+
+
+        {/* INFORMACIÓN DEL LEAD */}
+        <aside className="lead-panel">
+
+          <div className="lead-header">
+            <h2>Información del lead</h2>
+            <span className="qualified">Activo</span>
+          </div>
+
+
+          <div className="lead-section">
+            <span className="label">Operación</span>
+            <strong>Alquiler</strong>
+          </div>
+
+          <div className="lead-section">
+            <span className="label">Tipo de inmueble</span>
+            <strong>Piso</strong>
+          </div>
+
+          <div className="lead-section">
+            <span className="label">Ciudad</span>
+            <strong>León</strong>
+          </div>
+
+          <div className="lead-section">
+            <span className="label">Presupuesto máximo</span>
+            <strong>900 €/mes</strong>
+          </div>
+
+          <div className="lead-section">
+            <span className="label">Entrada</span>
+            <strong>Septiembre</strong>
+          </div>
+
+          <div className="lead-section">
+            <span className="label">Personas</span>
+            <strong>2</strong>
+          </div>
+
+          <div className="lead-section">
+            <span className="label">Mascotas</span>
+            <strong>Sí 🐕</strong>
+          </div>
+
+
+          <div className="lead-footer">
+            <span>Estado del lead</span>
+            <strong>🟢 En proceso</strong>
+          </div>
+
+        </aside>
+
+      </main>
+
+    </div>
+  )
+}
+
+export default App

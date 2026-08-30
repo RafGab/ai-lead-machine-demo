@@ -151,21 +151,78 @@ def process_message(
         lead.model_dump()
     )
 
-    # ---------------------------------------------------------
     # 8. Procesar Lead
+    # ---------------------------------------------------------
+
     result = process_lead(lead)
 
-# 9. Guardar la respuesta del agente
-    if result.get("question"):
-     save_message(
-        conversation_id,
-        "assistant",
-        result["question"]
-    )
+    # ---------------------------------------------------------
+    # 9. Construir respuesta del agente
+    # ---------------------------------------------------------
 
-# 10. Devolver información
+    assistant_message = None
+
+    if result.get("question"):
+
+        assistant_message = result["question"]
+
+    elif result.get("status") == "matches_found":
+
+        properties = result.get("properties", [])
+
+        lines = [
+            "He encontrado estas opciones que pueden encajar:"
+        ]
+
+        for property in properties:
+
+            title = property.get("title", "Propiedad")
+            price = property.get("price")
+
+            lines.append(
+                f"🏠 {title}"
+            )
+
+            if price is not None:
+                lines.append(
+                    f"💶 {price:.0f} €/mes"
+                )
+
+        assistant_message = "\n".join(lines)
+
+    elif result.get("status") == "no_results":
+
+        assistant_message = (
+            "Ahora mismo no encontramos propiedades "
+            "que coincidan con tus criterios."
+        )
+
+    elif result.get("status") == "incompatible":
+
+        assistant_message = result.get(
+            "message",
+            "Lo siento, no cumples los requisitos de esta propiedad."
+        )
+
+    # ---------------------------------------------------------
+    # 10. Guardar respuesta del agente
+    # ---------------------------------------------------------
+
+    if assistant_message:
+
+        save_message(
+            conversation_id,
+            "assistant",
+            assistant_message
+        )
+
+    # ---------------------------------------------------------
+    # 11. Devolver información
+    # ---------------------------------------------------------
+
     return {
-    "conversation_id": conversation_id,
-    "lead": lead.model_dump(),
-    "result": result
-}
+        "conversation_id": conversation_id,
+        "lead": lead.model_dump(),
+        "result": result,
+        "assistant_message": assistant_message
+    }
