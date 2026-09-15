@@ -4,7 +4,7 @@ from backend.models.lead import Lead
 from backend.services.ai_service import extract_lead_data
 from backend.services.questions import get_next_question
 from backend.services.rules import validate_room_rules
-from backend.services.matching import find_matching_properties
+from backend.services.matching import find_matching_properties, explain_no_matches
 from backend.services.conversation_repository import (
     create_conversation,
     save_message,
@@ -14,6 +14,21 @@ from backend.services.conversation_repository import (
 from backend.services.normalization import normalize_operation, normalize_property_type
 
 logger = logging.getLogger(__name__)
+
+# Detección simple por palabras clave, no por IA (para no gastar una
+# llamada extra ni añadir latencia). Solo dispara con frases que son
+# prácticamente el mensaje completo, para no confundir "ya no llevaré
+# la mascota" (cambia un dato) con una despedida real.
+CLOSING_PHRASES = {
+    "finalizar", "terminar", "cancelar", "salir", "adios", "adiós",
+    "no gracias", "nada mas gracias", "nada más gracias", "chao",
+    "hasta luego", "gracias, eso es todo", "eso es todo",
+}
+
+
+def is_closing_message(message: str) -> bool:
+    normalized = message.strip().lower().rstrip(".!¡¿? ")
+    return normalized in CLOSING_PHRASES
 
 
 def get_deposit_note(lead: Lead) -> str | None:
@@ -63,7 +78,7 @@ def process_lead(lead: Lead) -> dict:
     if not properties:
         return {
             "status": "no_results",
-            "message": "No encontramos propiedades que coincidan con los criterios."
+            "message": explain_no_matches(lead)
         }
 
     # 5. Devolver propiedades encontradas
@@ -139,6 +154,27 @@ def process_message(
         "lead_data",
         {}
     )
+
+    # Si el cliente quiere terminar, no repetimos el último estado:
+    # cerramos la conversación con un mensaje de despedida.
+    if is_closing_message(message):
+        assistant_message = (
+            "¡Perfecto! Si en algún momento quieres retomarlo, aquí "
+            "estaré. Que tengas un buen día 👋"
+        )
+
+        save_message(
+            conversation_id,
+            "assistant",
+            assistant_message
+        )
+
+        return {
+            "conversation_id": conversation_id,
+            "lead": existing_lead,
+            "result": {"status": "closed"},
+            "assistant_message": assistant_message
+        }
 
     # ---------------------------------------------------------
     # 4. Extraer información del mensaje
@@ -249,9 +285,9 @@ def process_message(
 
     elif result.get("status") == "no_results":
 
-        assistant_message = (
-            "Ahora mismo no encontramos propiedades "
-            "que coincidan con tus criterios."
+        assistant_message = result.get(
+            "message",
+            "Ahora mismo no encontramos propiedades que coincidan con tus criterios."
         )
 
     elif result.get("status") == "incompatible":

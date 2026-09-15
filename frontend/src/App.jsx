@@ -15,6 +15,7 @@ function App() {
   const [conversationId, setConversationId] = useState(null)
   const [lead, setLead] = useState({})
   const [visitFormPropertyId, setVisitFormPropertyId] = useState(null)
+  const [imageIndexByProperty, setImageIndexByProperty] = useState({})
   const [visitForm, setVisitForm] = useState({
     date: '',
     time: '',
@@ -244,6 +245,15 @@ function App() {
       ])
     }
   }
+  const changeImage = (propertyId, total, direction) => {
+    setImageIndexByProperty((current) => {
+      const currentIndex = current[propertyId] || 0
+      const nextIndex = (currentIndex + direction + total) % total
+
+      return { ...current, [propertyId]: nextIndex }
+    })
+  }
+
   const openVisitForm = (propertyId) => {
     setVisitFormPropertyId(propertyId)
     setVisitForm({
@@ -441,11 +451,52 @@ function App() {
               >
 
                 {property.images?.length > 0 && (
-                  <img
-                    src={`${API_URL}${property.images[0]}`}
-                    alt={property.title}
-                    className="property-image"
-                  />
+                  <div className="property-image-wrapper">
+                    <img
+                      src={`${API_URL}${property.images[imageIndexByProperty[property.id] || 0]}`}
+                      alt={property.title}
+                      className="property-image"
+                    />
+
+                    {property.images.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          className="image-nav image-nav-prev"
+                          aria-label="Foto anterior"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            changeImage(property.id, property.images.length, -1)
+                          }}
+                        >
+                          ‹
+                        </button>
+
+                        <button
+                          type="button"
+                          className="image-nav image-nav-next"
+                          aria-label="Foto siguiente"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            changeImage(property.id, property.images.length, 1)
+                          }}
+                        >
+                          ›
+                        </button>
+
+                        <div className="image-dots">
+                          {property.images.map((_, index) => (
+                            <span
+                              key={index}
+                              className={`image-dot ${
+                                (imageIndexByProperty[property.id] || 0) === index ? 'active' : ''
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
 
                 <div className="property-content">
