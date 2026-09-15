@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from backend.routes.properties import router as properties_router
 from backend.routes.search import router as search_router
@@ -19,8 +20,11 @@ create_tables()  # Create tables if they don't exist
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
+    # allow_origins=["*"] porque el widget embebible se sirve desde este
+    # backend pero se ejecuta en el dominio de cada cliente (su web
+    # WordPress); no se usan cookies/credenciales, solo JSON.
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -31,6 +35,14 @@ def inicio():
     return {
         "mensaje": "AI Lead Machine está funcionando 🚀"
     }
+
+
+@app.get("/widget.js")
+def widget_script():
+    return FileResponse(
+        "frontend/public/widget.js",
+        media_type="application/javascript",
+    )
 
 
 app.include_router(properties_router)
