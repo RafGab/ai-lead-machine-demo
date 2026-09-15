@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
+// Usa el mismo host desde el que se sirvió esta página (localhost,
+// o la IP local cuando se accede desde otro dispositivo en la red),
+// así el frontend siempre habla con el backend correcto.
+const API_URL = `http://${window.location.hostname}:8000`
+
 function App() {
   const [message, setMessage] = useState('')
   const [properties, setProperties] = useState([])
@@ -58,7 +63,7 @@ function App() {
 
   const loadConversations = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/conversations')
+      const response = await fetch(`${API_URL}/conversations`)
 
       if (!response.ok) {
         throw new Error('No se pudieron cargar las conversaciones')
@@ -78,7 +83,7 @@ function App() {
 
   const selectConversation = async (id) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/conversations/${id}`)
+      const response = await fetch(`${API_URL}/conversations/${id}`)
 
       if (!response.ok) {
         throw new Error('No se pudo cargar la conversación')
@@ -112,7 +117,7 @@ function App() {
     const loadProperties = async () => {
     try {
       const response = await fetch(
-        'http://127.0.0.1:8000/properties'
+        `${API_URL}/properties`
       )
 
       if (!response.ok) {
@@ -130,7 +135,7 @@ function App() {
   const searchProperties = async (criteria) => {
   try {
     const response = await fetch(
-      'http://127.0.0.1:8000/search',
+      `${API_URL}/search`,
       {
         method: 'POST',
         headers: {
@@ -190,7 +195,7 @@ function App() {
 
     try {
       const response = await fetch(
-        'http://127.0.0.1:8000/conversations/message',
+        `${API_URL}/conversations/message`,
         {
           method: 'POST',
           headers: {
@@ -256,7 +261,7 @@ function App() {
 
     try {
       const response = await fetch(
-        'http://127.0.0.1:8000/visits',
+        `${API_URL}/visits`,
         {
           method: 'POST',
           headers: {
@@ -432,7 +437,7 @@ function App() {
 
                 {property.images?.length > 0 && (
                   <img
-                    src={`http://127.0.0.1:8000${property.images[0]}`}
+                    src={`${API_URL}${property.images[0]}`}
                     alt={property.title}
                     className="property-image"
                   />
