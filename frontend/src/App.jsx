@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-// Usa el mismo host desde el que se sirvió esta página (localhost,
-// o la IP local cuando se accede desde otro dispositivo en la red),
-// así el frontend siempre habla con el backend correcto.
-const API_URL = `http://${window.location.hostname}:8000`
+// VITE_API_URL permite apuntar a un backend en otra URL (por ejemplo,
+// un túnel público con un dominio distinto al del frontend). Si no se
+// define, usa el mismo host desde el que se sirvió esta página
+// (localhost, o la IP local en la red), asumiendo que el backend
+// está en el puerto 8000 de ese mismo host.
+const API_URL =
+  import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000`
 
 function App() {
   const [message, setMessage] = useState('')
