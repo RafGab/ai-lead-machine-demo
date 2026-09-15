@@ -54,5 +54,22 @@ def create_tables():
         )
     """)
 
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS visits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER,
+            property_id INTEGER NOT NULL,
+            scheduled_at TEXT NOT NULL,
+            lead_name TEXT,
+            lead_phone TEXT,
+            lead_email TEXT,
+            calendar_event_id TEXT,
+            calendar_status TEXT NOT NULL DEFAULT 'not_configured',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id),
+            FOREIGN KEY (property_id) REFERENCES properties(id)
+        )
+    """)
+
     connection.commit()
     connection.close()

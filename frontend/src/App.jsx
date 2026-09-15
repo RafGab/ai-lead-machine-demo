@@ -6,6 +6,15 @@ function App() {
   const [properties, setProperties] = useState([])
   const [conversationId, setConversationId] = useState(null)
   const [lead, setLead] = useState({})
+  const [visitFormPropertyId, setVisitFormPropertyId] = useState(null)
+  const [visitForm, setVisitForm] = useState({
+    date: '',
+    time: '',
+    name: '',
+    phone: '',
+    email: ''
+  })
+  const [visitStatusByProperty, setVisitStatusByProperty] = useState({})
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -135,6 +144,67 @@ function App() {
       ])
     }
   }
+  const openVisitForm = (propertyId) => {
+    setVisitFormPropertyId(propertyId)
+    setVisitForm({
+      date: '',
+      time: '',
+      name: lead.name || '',
+      phone: lead.phone || '',
+      email: lead.email || ''
+    })
+  }
+
+  const submitVisit = async (propertyId) => {
+    if (!visitForm.date || !visitForm.time) {
+      setVisitStatusByProperty((current) => ({
+        ...current,
+        [propertyId]: 'Indica fecha y hora para la visita.'
+      }))
+      return
+    }
+
+    try {
+      const response = await fetch(
+        'http://127.0.0.1:8000/visits',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            property_id: propertyId,
+            scheduled_at: `${visitForm.date}T${visitForm.time}:00`,
+            conversation_id: conversationId,
+            lead_name: visitForm.name || null,
+            lead_phone: visitForm.phone || null,
+            lead_email: visitForm.email || null
+          })
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('No se pudo agendar la visita')
+      }
+
+      const data = await response.json()
+
+      setVisitStatusByProperty((current) => ({
+        ...current,
+        [propertyId]: data.message
+      }))
+
+      setVisitFormPropertyId(null)
+    } catch (error) {
+      console.error(error)
+
+      setVisitStatusByProperty((current) => ({
+        ...current,
+        [propertyId]: 'No se pudo agendar la visita. Inténtalo de nuevo.'
+      }))
+    }
+  }
+
   return (
     <div className="app">
 
@@ -297,6 +367,100 @@ function App() {
                       🛏️ {property.bedrooms} habitación
                       {property.bedrooms > 1 ? 'es' : ''}
                     </span>
+                  )}
+
+                  {visitFormPropertyId === property.id ? (
+                    <div className="visit-form">
+                      <div className="visit-form-row">
+                        <input
+                          type="date"
+                          value={visitForm.date}
+                          onChange={(event) =>
+                            setVisitForm((current) => ({
+                              ...current,
+                              date: event.target.value
+                            }))
+                          }
+                        />
+                        <input
+                          type="time"
+                          value={visitForm.time}
+                          onChange={(event) =>
+                            setVisitForm((current) => ({
+                              ...current,
+                              time: event.target.value
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Nombre"
+                        value={visitForm.name}
+                        onChange={(event) =>
+                          setVisitForm((current) => ({
+                            ...current,
+                            name: event.target.value
+                          }))
+                        }
+                      />
+
+                      <input
+                        type="tel"
+                        placeholder="Teléfono"
+                        value={visitForm.phone}
+                        onChange={(event) =>
+                          setVisitForm((current) => ({
+                            ...current,
+                            phone: event.target.value
+                          }))
+                        }
+                      />
+
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={visitForm.email}
+                        onChange={(event) =>
+                          setVisitForm((current) => ({
+                            ...current,
+                            email: event.target.value
+                          }))
+                        }
+                      />
+
+                      <div className="visit-form-actions">
+                        <button
+                          type="button"
+                          className="visit-cancel"
+                          onClick={() => setVisitFormPropertyId(null)}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          className="visit-confirm"
+                          onClick={() => submitVisit(property.id)}
+                        >
+                          Confirmar visita
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="schedule-visit-button"
+                      onClick={() => openVisitForm(property.id)}
+                    >
+                      📅 Agendar visita
+                    </button>
+                  )}
+
+                  {visitStatusByProperty[property.id] && (
+                    <p className="visit-status">
+                      {visitStatusByProperty[property.id]}
+                    </p>
                   )}
 
                 </div>

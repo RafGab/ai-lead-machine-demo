@@ -394,3 +394,81 @@ input {
   background: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
+
+/* VISITAS */
+
+.schedule-visit-button {
+  margin-top: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: white;
+  color: #111827;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.schedule-visit-button:hover {
+  background: #f3f4f6;
+}
+
+.visit-form {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visit-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.visit-form input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+}
+
+.visit-form input:focus {
+  border-color: #9ca3af;
+}
+
+.visit-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.visit-form-actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.visit-cancel {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.visit-confirm {
+  background: #111827;
+  color: white;
+}
+
+.visit-status {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #16a34a;
+  line-height: 1.4;
+}

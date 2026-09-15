@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from backend.routes.properties import router as properties_router
 from backend.routes.search import router as search_router
 from backend.routes.conversation import router as conversation_router
+from backend.routes.visits import router as visits_router
+from backend.routes.webhooks import router as webhooks_router
 from backend.database.database import create_tables
 
 
@@ -34,3 +36,5 @@ def inicio():
 app.include_router(properties_router)
 app.include_router(search_router)
 app.include_router(conversation_router)
+app.include_router(visits_router)
+app.include_router(webhooks_router)
