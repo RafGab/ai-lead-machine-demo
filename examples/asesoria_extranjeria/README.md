@@ -14,21 +14,20 @@ Esa regla vive en un único sitio fácil de ajustar,
 [`services/payment_service.py`](services/payment_service.py):
 
 ```python
-PROCEDURES_REQUIRING_FEE = {"residencia inicial"}
+PROCEDURES_REQUIRING_FEE = {"residencia inicial", "recurso"}
 PROCEDURES_EXEMPT_FROM_FEE = {
     "renovación", "canje de licencia de conducir",
     "modificación de estancia a residencia",
-    "arraigo", "reagrupación familiar", "asilo", "nacionalidad", "recurso",
+    "arraigo", "reagrupación familiar", "asilo", "nacionalidad",
 }
 ```
 
-**Importante — te lo dejo marcado en el propio código:** confirmaste que
-canje de conducir, modificar estancia→residencia y renovación no pagan, y
-que la primera consulta de alguien que quiere migrar sí paga. Pero
-arraigo, reagrupación familiar, asilo, nacionalidad y recurso son casos
-donde el cliente puede estar dentro o fuera de España según cada
-situación — de momento los dejé como exentos por defecto (para no cobrar
-de más por error) hasta que me confirmes cada uno.
+**Confirmado hasta ahora:** canje de conducir, modificar estancia→residencia
+y renovación no pagan; la primera consulta de alguien que quiere migrar y
+los recursos sí pagan. Quedan pendientes de confirmar (de momento exentos
+por defecto, para no cobrar de más por error): **arraigo, reagrupación
+familiar, asilo y nacionalidad** — son casos donde el cliente puede estar
+dentro o fuera de España según cada situación.
 
 ## Se sustituyen / se añaden
 

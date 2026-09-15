@@ -6,16 +6,18 @@ STRIPE_API_URL = "https://api.stripe.com/v1/checkout/sessions"
 FIRST_CONSULTATION_FEE_CENTS = 3000  # 30 €
 
 # Trámites de clientes que están fuera de España y quieren venirse a
-# vivir aquí: pagan la consulta inicial de 30 €.
+# vivir aquí: pagan la consulta inicial de 30 €. "recurso" también
+# paga (confirmado).
 PROCEDURES_REQUIRING_FEE = {
     "residencia inicial",
+    "recurso",
 }
 
 # Trámites administrativos para quien ya está en España: la primera
-# consulta es gratuita. (arraigo, reagrupación familiar, asilo,
-# nacionalidad y recurso quedan pendientes de confirmar con el cliente
-# del despacho — de momento están aquí, en la lista exenta, hasta que
-# se aclare.)
+# consulta es gratuita. (arraigo, reagrupación familiar, asilo y
+# nacionalidad quedan pendientes de confirmar con el cliente del
+# despacho — de momento están aquí, en la lista exenta, hasta que se
+# aclare.)
 PROCEDURES_EXEMPT_FROM_FEE = {
     "renovación",
     "canje de licencia de conducir",
@@ -24,7 +26,6 @@ PROCEDURES_EXEMPT_FROM_FEE = {
     "reagrupación familiar",
     "asilo",
     "nacionalidad",
-    "recurso",
 }
 
 
