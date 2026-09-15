@@ -12,6 +12,7 @@ class SearchRequest(BaseModel):
     property_type: str | None = None
     max_price: float | None = None
     bedrooms: int | None = None
+    bathrooms: int | None = None
 
 
 @router.post("/search")
@@ -46,6 +47,10 @@ def search_properties(request: SearchRequest):
     if request.bedrooms is not None:
         query += " AND bedrooms >= ?"
         parameters.append(request.bedrooms)
+
+    if request.bathrooms is not None:
+        query += " AND bathrooms >= ?"
+        parameters.append(request.bathrooms)
 
     rows = connection.execute(query, parameters).fetchall()
 

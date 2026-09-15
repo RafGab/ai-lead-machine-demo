@@ -168,14 +168,16 @@ function App() {
     operation: lead.operation || undefined,
     property_type: lead.property_type || undefined,
     max_price: lead.max_price || undefined,
-    bedrooms: lead.bedrooms || undefined
+    bedrooms: lead.bedrooms || undefined,
+    bathrooms: lead.bathrooms || undefined
   })
 }, [
   lead.city,
   lead.operation,
   lead.property_type,
   lead.max_price,
-  lead.bedrooms
+  lead.bedrooms,
+  lead.bathrooms
 ])
 
   const sendMessage = async () => {
@@ -457,10 +459,21 @@ function App() {
   : `${property.price.toLocaleString('es-ES')} €/mes`}
                   </strong>
 
-                  {property.bedrooms && (
+                  {(property.bedrooms || property.bathrooms) && (
                     <span>
-                      🛏️ {property.bedrooms} habitación
-                      {property.bedrooms > 1 ? 'es' : ''}
+                      {property.bedrooms && (
+                        <>
+                          🛏️ {property.bedrooms} habitación
+                          {property.bedrooms > 1 ? 'es' : ''}
+                        </>
+                      )}
+                      {property.bedrooms && property.bathrooms ? ' · ' : ''}
+                      {property.bathrooms && (
+                        <>
+                          🛁 {property.bathrooms} baño
+                          {property.bathrooms > 1 ? 's' : ''}
+                        </>
+                      )}
                     </span>
                   )}
 

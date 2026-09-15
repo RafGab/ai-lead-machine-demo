@@ -31,6 +31,14 @@ def find_matching_properties(lead: Lead) -> list[dict]:
         query += " AND price <= ?"
         parameters.append(lead.max_price)
 
+    if lead.bedrooms is not None:
+        query += " AND bedrooms >= ?"
+        parameters.append(lead.bedrooms)
+
+    if lead.bathrooms is not None:
+        query += " AND bathrooms >= ?"
+        parameters.append(lead.bathrooms)
+
     rows = connection.execute(query, parameters).fetchall()
 
     connection.close()

@@ -1,5 +1,5 @@
 from backend.models.lead import Lead
-from backend.services.normalization import normalize_property_type
+from backend.services.normalization import normalize_operation, normalize_property_type
 
 
 def get_next_question(lead: Lead) -> str | None:
@@ -8,9 +8,13 @@ def get_next_question(lead: Lead) -> str | None:
     if not lead.operation:
         return "¿Buscas alquilar o comprar?"
 
+    normalized_operation = normalize_operation(lead.operation)
+
     # 2. Tipo de inmueble
     if not lead.property_type:
         return "¿Qué tipo de inmueble estás buscando?"
+
+    normalized_type = normalize_property_type(lead.property_type)
 
     # 3. Ciudad
     if not lead.city:
@@ -18,16 +22,20 @@ def get_next_question(lead: Lead) -> str | None:
 
     # 4. Presupuesto
     if lead.max_price is None:
+        if normalized_operation == "venta":
+            return "¿Cuál es tu presupuesto máximo?"
+
         return "¿Cuál es vuestro presupuesto máximo mensual?"
 
     # 5. Fecha de entrada
     if not lead.move_in_date:
         return "¿Para qué fecha necesitáis entrar?"
 
-    # Ocupantes, menores y mascotas solo importan para habitaciones
-    # compartidas (son las únicas reglas que valida rules.py). Para un
-    # piso o una casa completa no aplican, así que no se preguntan.
-    if normalize_property_type(lead.property_type) == "habitacion":
+    # Ocupantes, menores y mascotas: siempre importan en habitaciones
+    # compartidas (son las reglas que valida rules.py). En un piso o
+    # casa completa en alquiler también importan (algunos propietarios
+    # no admiten mascotas o menores), pero no en una compra.
+    if normalized_type == "habitacion":
 
         # 6. Número de ocupantes
         if lead.occupants is None:
@@ -40,5 +48,34 @@ def get_next_question(lead: Lead) -> str | None:
         # 8. Mascotas
         if lead.has_pets is None:
             return "¿Tenéis alguna mascota?"
+
+        return None
+
+    if normalized_operation == "alquiler":
+
+        # 6. Menores
+        if lead.has_minors is None:
+            return "¿Hay algún menor de edad entre las personas que vivirían allí?"
+
+        # 7. Mascotas
+        if lead.has_pets is None:
+            return (
+                "¿Tenéis alguna mascota? Algunos propietarios no las admiten, "
+                "así que nos ayuda a filtrar mejor."
+            )
+
+        return None
+
+    if normalized_operation == "venta":
+
+        # 6. Habitaciones
+        if lead.bedrooms is None:
+            return "¿Cuántas habitaciones necesitas?"
+
+        # 7. Baños
+        if lead.bathrooms is None:
+            return "¿Cuántos baños necesitas?"
+
+        return None
 
     return None

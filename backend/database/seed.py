@@ -8,6 +8,7 @@ properties = [
         "city": "León",
         "price": 390,
         "bedrooms": 1,
+        "bathrooms": 1,
         "image": "/properties/hab1_universidad.jpeg",
     },
     {
@@ -17,6 +18,7 @@ properties = [
         "city": "León",
         "price": 420,
         "bedrooms": 1,
+        "bathrooms": 1,
         "image": "/properties/hab1_centro.jpeg",
     },
     {
@@ -26,6 +28,7 @@ properties = [
         "city": "León",
         "price": 165000,
         "bedrooms": 3,
+        "bathrooms": 2,
         "image": "/properties/vivienda-leon-1.svg",
     },
     {
@@ -35,6 +38,7 @@ properties = [
         "city": "León",
         "price": 850,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-leon-2.svg",
     },
     {
@@ -44,6 +48,7 @@ properties = [
         "city": "Valladolid",
         "price": 650,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-valladolid-1.svg",
     },
     {
@@ -53,6 +58,7 @@ properties = [
         "city": "Valladolid",
         "price": 300,
         "bedrooms": 1,
+        "bathrooms": 1,
         "image": "/properties/habitacion-valladolid-1.svg",
     },
     {
@@ -62,6 +68,7 @@ properties = [
         "city": "Gijón",
         "price": 700,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-gijon-1.svg",
     },
     {
@@ -71,6 +78,7 @@ properties = [
         "city": "Gijón",
         "price": 175000,
         "bedrooms": 3,
+        "bathrooms": 2,
         "image": "/properties/vivienda-gijon-2.svg",
     },
     {
@@ -80,6 +88,7 @@ properties = [
         "city": "Oviedo",
         "price": 140000,
         "bedrooms": 3,
+        "bathrooms": 2,
         "image": "/properties/vivienda-oviedo-1.svg",
     },
     {
@@ -89,6 +98,7 @@ properties = [
         "city": "Oviedo",
         "price": 680,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-oviedo-2.svg",
     },
     {
@@ -98,6 +108,7 @@ properties = [
         "city": "Burgos",
         "price": 600,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-burgos-1.svg",
     },
     {
@@ -107,6 +118,7 @@ properties = [
         "city": "Burgos",
         "price": 280,
         "bedrooms": 1,
+        "bathrooms": 1,
         "image": "/properties/habitacion-burgos-1.svg",
     },
     {
@@ -116,6 +128,7 @@ properties = [
         "city": "Santander",
         "price": 900,
         "bedrooms": 3,
+        "bathrooms": 2,
         "image": "/properties/vivienda-santander-1.svg",
     },
     {
@@ -125,6 +138,7 @@ properties = [
         "city": "Santander",
         "price": 190000,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-santander-2.svg",
     },
     {
@@ -134,6 +148,7 @@ properties = [
         "city": "Bilbao",
         "price": 950,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-bilbao-1.svg",
     },
     {
@@ -143,6 +158,7 @@ properties = [
         "city": "Bilbao",
         "price": 220000,
         "bedrooms": 3,
+        "bathrooms": 2,
         "image": "/properties/vivienda-bilbao-2.svg",
     },
     {
@@ -152,6 +168,7 @@ properties = [
         "city": "Madrid",
         "price": 1400,
         "bedrooms": 2,
+        "bathrooms": 1,
         "image": "/properties/vivienda-madrid-1.svg",
     },
     {
@@ -161,6 +178,7 @@ properties = [
         "city": "Madrid",
         "price": 550,
         "bedrooms": 1,
+        "bathrooms": 1,
         "image": "/properties/habitacion-madrid-1.svg",
     },
 ]
@@ -175,8 +193,8 @@ for property_data in properties:
     cursor = connection.execute(
         """
         INSERT INTO properties
-        (title, operation, property_type, city, price, bedrooms)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (title, operation, property_type, city, price, bedrooms, bathrooms)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
         (
             property_data["title"],
@@ -185,6 +203,7 @@ for property_data in properties:
             property_data["city"],
             property_data["price"],
             property_data["bedrooms"],
+            property_data["bathrooms"],
         ),
     )
 

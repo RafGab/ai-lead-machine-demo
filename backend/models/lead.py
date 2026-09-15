@@ -13,6 +13,7 @@ class Lead(BaseModel):
 
     move_in_date: str | None = None
     bedrooms: int | None = None
+    bathrooms: int | None = None
     area: str | None = None
     occupants: int | None = None
 

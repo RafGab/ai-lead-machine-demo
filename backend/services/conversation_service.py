@@ -11,8 +11,27 @@ from backend.services.conversation_repository import (
     get_conversation,
     update_lead_data,
 )
+from backend.services.normalization import normalize_operation, normalize_property_type
 
 logger = logging.getLogger(__name__)
+
+
+def get_deposit_note(lead: Lead) -> str | None:
+    """
+    Aviso informativo sobre la fianza habitual. No filtra ni descarta
+    propiedades, solo informa al cliente.
+    """
+
+    if not lead.operation or normalize_operation(lead.operation) != "alquiler":
+        return None
+
+    if lead.property_type and normalize_property_type(lead.property_type) == "habitacion":
+        return (
+            "💳 Fianza habitual: 1 mes (2 meses si no dispones de "
+            "aval o nómina)."
+        )
+
+    return "💳 Fianza habitual para pisos: 2 meses."
 
 
 def process_lead(lead: Lead) -> dict:
@@ -126,7 +145,10 @@ def process_message(
     # ---------------------------------------------------------
 
     try:
-        ai_data = extract_lead_data(message)
+        ai_data = extract_lead_data(
+            message,
+            conversation_history=conversation.get("messages", [])
+        )
         new_data = ai_data.model_dump()
     except Exception:
         logger.exception(
@@ -206,15 +228,22 @@ def process_message(
 
             title = property.get("title", "Propiedad")
             price = property.get("price")
+            operation = property.get("operation")
 
             lines.append(
                 f"🏠 {title}"
             )
 
             if price is not None:
+                suffix = " €" if operation == "venta" else " €/mes"
                 lines.append(
-                    f"💶 {price:.0f} €/mes"
+                    f"💶 {price:.0f}{suffix}"
                 )
+
+        deposit_note = get_deposit_note(lead)
+
+        if deposit_note:
+            lines.append(deposit_note)
 
         assistant_message = "\n".join(lines)
 

@@ -9,6 +9,23 @@ def get_connection():
     return connection
 
 
+def _ensure_column(connection, table: str, column: str, column_type: str) -> None:
+    """
+    Añade una columna si la tabla ya existía de una versión anterior
+    sin ella (migración segura, no borra datos).
+    """
+
+    existing_columns = [
+        row["name"]
+        for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+    ]
+
+    if column not in existing_columns:
+        connection.execute(
+            f"ALTER TABLE {table} ADD COLUMN {column} {column_type}"
+        )
+
+
 def create_tables():
     connection = get_connection()
 
@@ -21,9 +38,12 @@ def create_tables():
             city TEXT NOT NULL,
             price REAL NOT NULL,
             bedrooms INTEGER,
+            bathrooms INTEGER,
             available BOOLEAN DEFAULT 1
         )
     """)
+
+    _ensure_column(connection, "properties", "bathrooms", "INTEGER")
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS property_images (

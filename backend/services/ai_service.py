@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -14,6 +15,8 @@ class AILeadData(BaseModel):
     city: str | None = None
     max_price: float | None = None
     move_in_date: str | None = None
+    bedrooms: int | None = None
+    bathrooms: int | None = None
     occupants: int | None = None
     has_minors: bool | None = None
     has_pets: bool | None = None
@@ -46,12 +49,16 @@ def extract_lead_data(
 
     client = get_openai_client()
 
+    today = datetime.now().strftime("%d de %B de %Y")
+
     input_messages = [
         {
             "role": "system",
             "content": (
                 "Eres un asistente especializado en captación "
                 "de leads inmobiliarios.\n\n"
+
+                f"Hoy es {today}.\n\n"
 
                 "Analiza la conversación y extrae únicamente "
                 "información que esté presente o que pueda "
@@ -86,6 +93,21 @@ def extract_lead_data(
 
                 "Para occupants utiliza el número de personas "
                 "que vivirán en el inmueble cuando esté indicado.\n\n"
+
+                "Para bedrooms y bathrooms utiliza el número de "
+                "habitaciones y baños que el cliente necesita, "
+                "cuando lo indique (normalmente al comprar).\n\n"
+
+                "Para move_in_date, ESTAS REGLAS SOLO APLICAN SI EL "
+                "MENSAJE HABLA DE CUÁNDO QUIERE ENTRAR; si el mensaje "
+                "no menciona fechas ni urgencia, devuelve None, no "
+                "inventes nada:\n"
+                "- Si dice que lo necesita 'ahora', 'ya' o 'cuanto "
+                "antes', usa el mes y año actuales (según la fecha de "
+                "hoy indicada arriba).\n"
+                "- Si dice que no tiene prisa o que solo está mirando "
+                "opciones sin fecha concreta, escribe 'sin fecha "
+                "definida'.\n\n"
 
                 "MUY IMPORTANTE: interpreta las respuestas "
                 "cortas como 'sí' o 'no' teniendo en cuenta "
