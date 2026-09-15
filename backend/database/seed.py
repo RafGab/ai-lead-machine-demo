@@ -36,10 +36,125 @@ properties = [
         "price": 850,
         "bedrooms": 2,
     },
+    {
+        "title": "Piso de 2 habitaciones en Valladolid",
+        "operation": "alquiler",
+        "property_type": "vivienda",
+        "city": "Valladolid",
+        "price": 650,
+        "bedrooms": 2,
+    },
+    {
+        "title": "Habitación cerca del campus en Valladolid",
+        "operation": "alquiler",
+        "property_type": "habitacion",
+        "city": "Valladolid",
+        "price": 300,
+        "bedrooms": 1,
+    },
+    {
+        "title": "Piso de 2 habitaciones en Gijón",
+        "operation": "alquiler",
+        "property_type": "vivienda",
+        "city": "Gijón",
+        "price": 700,
+        "bedrooms": 2,
+    },
+    {
+        "title": "Piso de 3 habitaciones cerca de la playa en Gijón",
+        "operation": "venta",
+        "property_type": "vivienda",
+        "city": "Gijón",
+        "price": 175000,
+        "bedrooms": 3,
+    },
+    {
+        "title": "Piso de 3 habitaciones en Oviedo",
+        "operation": "venta",
+        "property_type": "vivienda",
+        "city": "Oviedo",
+        "price": 140000,
+        "bedrooms": 3,
+    },
+    {
+        "title": "Piso de 2 habitaciones en Oviedo",
+        "operation": "alquiler",
+        "property_type": "vivienda",
+        "city": "Oviedo",
+        "price": 680,
+        "bedrooms": 2,
+    },
+    {
+        "title": "Piso de 2 habitaciones en Burgos",
+        "operation": "alquiler",
+        "property_type": "vivienda",
+        "city": "Burgos",
+        "price": 600,
+        "bedrooms": 2,
+    },
+    {
+        "title": "Habitación individual en Burgos",
+        "operation": "alquiler",
+        "property_type": "habitacion",
+        "city": "Burgos",
+        "price": 280,
+        "bedrooms": 1,
+    },
+    {
+        "title": "Piso de 3 habitaciones en Santander",
+        "operation": "alquiler",
+        "property_type": "vivienda",
+        "city": "Santander",
+        "price": 900,
+        "bedrooms": 3,
+    },
+    {
+        "title": "Piso de 2 habitaciones en Santander",
+        "operation": "venta",
+        "property_type": "vivienda",
+        "city": "Santander",
+        "price": 190000,
+        "bedrooms": 2,
+    },
+    {
+        "title": "Piso de 2 habitaciones en Bilbao",
+        "operation": "alquiler",
+        "property_type": "vivienda",
+        "city": "Bilbao",
+        "price": 950,
+        "bedrooms": 2,
+    },
+    {
+        "title": "Piso de 3 habitaciones en Bilbao",
+        "operation": "venta",
+        "property_type": "vivienda",
+        "city": "Bilbao",
+        "price": 220000,
+        "bedrooms": 3,
+    },
+    {
+        "title": "Piso de 2 habitaciones en Madrid",
+        "operation": "alquiler",
+        "property_type": "vivienda",
+        "city": "Madrid",
+        "price": 1400,
+        "bedrooms": 2,
+    },
+    {
+        "title": "Habitación en piso compartido en Madrid",
+        "operation": "alquiler",
+        "property_type": "habitacion",
+        "city": "Madrid",
+        "price": 550,
+        "bedrooms": 1,
+    },
 ]
 
 
 connection = get_connection()
+
+connection.execute("DELETE FROM property_images")
+connection.execute("DELETE FROM properties")
 
 for property_data in properties:
     cursor = connection.execute(
