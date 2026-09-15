@@ -31,7 +31,9 @@
     conversationId: null,
     lead: {},
     sending: false,
-    visitFormFor: null
+    visitFormFor: null,
+    optionsField: null,
+    activeOptionsEl: null
   };
 
   var side = config.position === "left" ? "left" : "right";
@@ -61,10 +63,17 @@
     ".alm-messages { flex: 1; overflow-y: auto; padding: 16px; background: #f7f8fa; display: flex; flex-direction: column; gap: 10px; }" +
     ".alm-msg { display: flex; }" +
     ".alm-msg.alm-user { justify-content: flex-end; }" +
-    ".alm-bubble-text { max-width: 80%; padding: 10px 13px; border-radius: 13px; font-size: 13px; line-height: 1.45; " +
-    "white-space: pre-wrap; }" +
-    ".alm-msg.alm-assistant .alm-bubble-text { background: white; border: 1px solid #e5e7eb; color: #1f2937; border-bottom-left-radius: 4px; }" +
-    ".alm-msg.alm-user .alm-bubble-text { background: " + config.color + "; color: white; border-bottom-right-radius: 4px; }" +
+    ".alm-card { max-width: 84%; border-radius: 13px; overflow: hidden; }" +
+    ".alm-msg.alm-assistant .alm-card { background: white; border: 1px solid #e5e7eb; border-bottom-left-radius: 4px; }" +
+    ".alm-msg.alm-user .alm-card { background: " + config.color + "; border-bottom-right-radius: 4px; }" +
+    ".alm-bubble-text { padding: 10px 13px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }" +
+    ".alm-msg.alm-assistant .alm-bubble-text { color: #1f2937; }" +
+    ".alm-msg.alm-user .alm-bubble-text { color: white; }" +
+    ".alm-options-list { display: flex; flex-direction: column; }" +
+    ".alm-option-row { border: none; border-top: 1px solid #e5e7eb; background: transparent; color: " + config.color + "; " +
+    "padding: 10px 13px; font-size: 12.5px; font-weight: 700; text-align: center; cursor: pointer; font-family: inherit; }" +
+    ".alm-option-row:hover { background: rgba(0,0,0,0.035); }" +
+    ".alm-option-row:active { background: " + config.color + "; color: white; }" +
     ".alm-typing { font-size: 12px; color: #9ca3af; padding: 0 16px 8px; }" +
     ".alm-properties { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }" +
     ".alm-property-card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }" +
@@ -145,7 +154,11 @@
     state.open = open === undefined ? !state.open : open;
     panel.classList.toggle("alm-open", state.open);
     if (state.open && messagesEl.children.length === 0) {
-      addAssistantMessage(config.welcomeMessage);
+      state.optionsField = "operation";
+      addAssistantMessage(config.welcomeMessage, null, [
+        { label: "Alquilar", value: "alquiler" },
+        { label: "Comprar", value: "compra" }
+      ]);
     }
   }
 
@@ -163,21 +176,51 @@
   function addUserMessage(text) {
     var row = document.createElement("div");
     row.className = "alm-msg alm-user";
-    row.innerHTML = '<div class="alm-bubble-text"></div>';
+    row.innerHTML = '<div class="alm-card"><div class="alm-bubble-text"></div></div>';
     row.querySelector(".alm-bubble-text").textContent = text;
     messagesEl.appendChild(row);
     scrollToBottom();
   }
 
-  function addAssistantMessage(text, properties) {
+  function addAssistantMessage(text, properties, options) {
+    // Una pregunta nueva sustituye a los botones de la anterior:
+    // si seguía sin responder, ya no tiene sentido dejarla pulsable.
+    if (state.activeOptionsEl && state.activeOptionsEl.parentNode) {
+      state.activeOptionsEl.remove();
+    }
+    state.activeOptionsEl = null;
+
     var row = document.createElement("div");
     row.className = "alm-msg alm-assistant";
+
+    var card = document.createElement("div");
+    card.className = "alm-card";
 
     var bubble = document.createElement("div");
     bubble.className = "alm-bubble-text";
     bubble.textContent = text || "";
-    row.appendChild(bubble);
+    card.appendChild(bubble);
 
+    if (options && options.length > 0) {
+      var optionsList = document.createElement("div");
+      optionsList.className = "alm-options-list";
+
+      options.forEach(function (option) {
+        var optionBtn = document.createElement("button");
+        optionBtn.type = "button";
+        optionBtn.className = "alm-option-row";
+        optionBtn.textContent = option.label;
+        optionBtn.addEventListener("click", function () {
+          sendMessage(option);
+        });
+        optionsList.appendChild(optionBtn);
+      });
+
+      card.appendChild(optionsList);
+      state.activeOptionsEl = optionsList;
+    }
+
+    row.appendChild(card);
     messagesEl.appendChild(row);
 
     if (properties && properties.length > 0) {
@@ -358,23 +401,37 @@
     return day + " " + d + "/" + m + " " + h + ":" + min;
   }
 
-  function sendMessage() {
-    var text = input.value.trim();
+  function sendMessage(option) {
+    var text = option ? option.label : input.value.trim();
     if (!text || state.sending) return;
 
+    // Quitar los botones en cuanto se elige uno, para no poder
+    // pulsarlos dos veces mientras llega la respuesta.
+    if (option && state.activeOptionsEl && state.activeOptionsEl.parentNode) {
+      state.activeOptionsEl.remove();
+      state.activeOptionsEl = null;
+    }
+
     addUserMessage(text);
-    input.value = "";
+    if (!option) input.value = "";
     state.sending = true;
     sendBtn.disabled = true;
     typingEl.style.display = "block";
 
+    var payload = {
+      message: text,
+      conversation_id: state.conversationId
+    };
+
+    if (option) {
+      payload.field = state.optionsField;
+      payload.value = option.value;
+    }
+
     fetch(config.apiUrl + "/conversations/message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: text,
-        conversation_id: state.conversationId
-      })
+      body: JSON.stringify(payload)
     })
       .then(function (response) {
         if (!response.ok) throw new Error("request failed");
@@ -383,13 +440,14 @@
       .then(function (data) {
         state.conversationId = data.conversation_id;
         state.lead = data.lead || {};
+        state.optionsField = data.options_field || null;
 
         var properties =
           data.result && data.result.status === "matches_found"
             ? data.result.properties
             : null;
 
-        addAssistantMessage(data.assistant_message, properties);
+        addAssistantMessage(data.assistant_message, properties, data.options);
       })
       .catch(function () {
         addAssistantMessage(
@@ -403,7 +461,9 @@
       });
   }
 
-  sendBtn.addEventListener("click", sendMessage);
+  sendBtn.addEventListener("click", function () {
+    sendMessage();
+  });
   input.addEventListener("keydown", function (event) {
     if (event.key === "Enter") sendMessage();
   });
