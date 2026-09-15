@@ -1,4 +1,5 @@
 from backend.models.lead import Lead
+from backend.services.normalization import normalize_property_type
 
 
 def get_next_question(lead: Lead) -> str | None:
@@ -23,16 +24,21 @@ def get_next_question(lead: Lead) -> str | None:
     if not lead.move_in_date:
         return "¿Para qué fecha necesitáis entrar?"
 
-    # 6. Número de ocupantes
-    if lead.occupants is None:
-        return "¿Cuántas personas vivirían en el inmueble?"
+    # Ocupantes, menores y mascotas solo importan para habitaciones
+    # compartidas (son las únicas reglas que valida rules.py). Para un
+    # piso o una casa completa no aplican, así que no se preguntan.
+    if normalize_property_type(lead.property_type) == "habitacion":
 
-    # 7. Menores
-    if lead.has_minors is None:
-        return "¿Hay algún menor de edad entre las personas que vivirían allí?"
+        # 6. Número de ocupantes
+        if lead.occupants is None:
+            return "¿Cuántas personas vivirían en el inmueble?"
 
-    # 8. Mascotas
-    if lead.has_pets is None:
-        return "¿Tenéis alguna mascota?"
+        # 7. Menores
+        if lead.has_minors is None:
+            return "¿Hay algún menor de edad entre las personas que vivirían allí?"
+
+        # 8. Mascotas
+        if lead.has_pets is None:
+            return "¿Tenéis alguna mascota?"
 
     return None
