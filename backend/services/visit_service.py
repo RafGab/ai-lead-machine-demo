@@ -5,6 +5,8 @@ from backend.services import visit_repository
 from backend.services.calendar_service import (
     CalendarNotConfigured,
     create_visit_event,
+    is_slot_available,
+    suggest_alternative_slots,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,6 +43,25 @@ def schedule_visit(
 
     if property_data is None:
         raise ValueError(f"La propiedad {property_id} no existe.")
+
+    try:
+        available = is_slot_available(scheduled_at)
+    except CalendarNotConfigured:
+        available = None
+
+    if available is False:
+        alternatives = suggest_alternative_slots(scheduled_at)
+
+        return {
+            "visit_id": None,
+            "calendar_status": "unavailable",
+            "calendar_event_id": None,
+            "message": (
+                "Esa fecha y hora ya están ocupadas para el comercial. "
+                "Aquí tienes algunas alternativas cercanas."
+            ),
+            "alternative_slots": alternatives,
+        }
 
     visit_id = visit_repository.create_visit(
         property_id=property_id,
@@ -96,4 +117,5 @@ def schedule_visit(
         "calendar_status": calendar_status,
         "calendar_event_id": calendar_event_id,
         "message": calendar_message,
+        "alternative_slots": [],
     }
