@@ -8,7 +8,7 @@ properties = [
         "city": "León",
         "price": 390,
         "bedrooms": 1,
-        "image": "/properties/habitacion-centro-1.jpg",
+        "image": "/properties/hab1_universidad.jpeg",
     },
     {
         "title": "Habitación individual en zona centro",
@@ -17,8 +17,7 @@ properties = [
         "city": "León",
         "price": 420,
         "bedrooms": 1,
-        "image": "/properties/habitacion-centro-1.jpg",
-        
+        "image": "/properties/hab1_centro.jpeg",
     },
     {
         "title": "Piso de 3 habitaciones cerca del centro",
@@ -27,6 +26,7 @@ properties = [
         "city": "León",
         "price": 165000,
         "bedrooms": 3,
+        "image": "/properties/vivienda-leon-1.svg",
     },
     {
         "title": "Piso de 2 habitaciones en León",
@@ -35,6 +35,7 @@ properties = [
         "city": "León",
         "price": 850,
         "bedrooms": 2,
+        "image": "/properties/vivienda-leon-2.svg",
     },
     {
         "title": "Piso de 2 habitaciones en Valladolid",
@@ -43,6 +44,7 @@ properties = [
         "city": "Valladolid",
         "price": 650,
         "bedrooms": 2,
+        "image": "/properties/vivienda-valladolid-1.svg",
     },
     {
         "title": "Habitación cerca del campus en Valladolid",
@@ -51,6 +53,7 @@ properties = [
         "city": "Valladolid",
         "price": 300,
         "bedrooms": 1,
+        "image": "/properties/habitacion-valladolid-1.svg",
     },
     {
         "title": "Piso de 2 habitaciones en Gijón",
@@ -59,6 +62,7 @@ properties = [
         "city": "Gijón",
         "price": 700,
         "bedrooms": 2,
+        "image": "/properties/vivienda-gijon-1.svg",
     },
     {
         "title": "Piso de 3 habitaciones cerca de la playa en Gijón",
@@ -67,6 +71,7 @@ properties = [
         "city": "Gijón",
         "price": 175000,
         "bedrooms": 3,
+        "image": "/properties/vivienda-gijon-2.svg",
     },
     {
         "title": "Piso de 3 habitaciones en Oviedo",
@@ -75,6 +80,7 @@ properties = [
         "city": "Oviedo",
         "price": 140000,
         "bedrooms": 3,
+        "image": "/properties/vivienda-oviedo-1.svg",
     },
     {
         "title": "Piso de 2 habitaciones en Oviedo",
@@ -83,6 +89,7 @@ properties = [
         "city": "Oviedo",
         "price": 680,
         "bedrooms": 2,
+        "image": "/properties/vivienda-oviedo-2.svg",
     },
     {
         "title": "Piso de 2 habitaciones en Burgos",
@@ -91,6 +98,7 @@ properties = [
         "city": "Burgos",
         "price": 600,
         "bedrooms": 2,
+        "image": "/properties/vivienda-burgos-1.svg",
     },
     {
         "title": "Habitación individual en Burgos",
@@ -99,6 +107,7 @@ properties = [
         "city": "Burgos",
         "price": 280,
         "bedrooms": 1,
+        "image": "/properties/habitacion-burgos-1.svg",
     },
     {
         "title": "Piso de 3 habitaciones en Santander",
@@ -107,6 +116,7 @@ properties = [
         "city": "Santander",
         "price": 900,
         "bedrooms": 3,
+        "image": "/properties/vivienda-santander-1.svg",
     },
     {
         "title": "Piso de 2 habitaciones en Santander",
@@ -115,6 +125,7 @@ properties = [
         "city": "Santander",
         "price": 190000,
         "bedrooms": 2,
+        "image": "/properties/vivienda-santander-2.svg",
     },
     {
         "title": "Piso de 2 habitaciones en Bilbao",
@@ -123,6 +134,7 @@ properties = [
         "city": "Bilbao",
         "price": 950,
         "bedrooms": 2,
+        "image": "/properties/vivienda-bilbao-1.svg",
     },
     {
         "title": "Piso de 3 habitaciones en Bilbao",
@@ -131,6 +143,7 @@ properties = [
         "city": "Bilbao",
         "price": 220000,
         "bedrooms": 3,
+        "image": "/properties/vivienda-bilbao-2.svg",
     },
     {
         "title": "Piso de 2 habitaciones en Madrid",
@@ -139,6 +152,7 @@ properties = [
         "city": "Madrid",
         "price": 1400,
         "bedrooms": 2,
+        "image": "/properties/vivienda-madrid-1.svg",
     },
     {
         "title": "Habitación en piso compartido en Madrid",
@@ -147,6 +161,7 @@ properties = [
         "city": "Madrid",
         "price": 550,
         "bedrooms": 1,
+        "image": "/properties/habitacion-madrid-1.svg",
     },
 ]
 
