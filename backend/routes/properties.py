@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from backend.database.database import get_connection
+from backend.services.normalization import normalize_property_type
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ def get_properties(
 
     if property_type:
         query += " AND property_type = ?"
-        parameters.append(property_type)
+        parameters.append(normalize_property_type(property_type))
 
     if max_price is not None:
         query += " AND price <= ?"

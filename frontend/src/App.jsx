@@ -15,13 +15,99 @@ function App() {
     email: ''
   })
   const [visitStatusByProperty, setVisitStatusByProperty] = useState({})
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content:
-        'Hola 👋 Soy tu agente de atención. Puedo ayudarte a encontrar la propiedad que necesitas.'
+  const [conversations, setConversations] = useState([])
+  const WELCOME_MESSAGE = {
+    role: 'assistant',
+    content:
+      'Hola 👋 Soy tu agente de atención. Puedo ayudarte a encontrar la propiedad que necesitas.'
+  }
+  const [messages, setMessages] = useState([WELCOME_MESSAGE])
+
+  const getInitials = (name) => {
+    if (!name) return '?'
+
+    return name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('')
+  }
+
+  const formatConversationTime = (dateString) => {
+    if (!dateString) return ''
+
+    const date = new Date(dateString.replace(' ', 'T') + 'Z')
+    if (Number.isNaN(date.getTime())) return ''
+
+    const now = new Date()
+    const sameDay = date.toDateString() === now.toDateString()
+
+    if (sameDay) {
+      return date.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
-  ])
+
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit'
+    })
+  }
+
+  const loadConversations = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/conversations')
+
+      if (!response.ok) {
+        throw new Error('No se pudieron cargar las conversaciones')
+      }
+
+      const data = await response.json()
+
+      setConversations(data)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    loadConversations()
+  }, [])
+
+  const selectConversation = async (id) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/conversations/${id}`)
+
+      if (!response.ok) {
+        throw new Error('No se pudo cargar la conversación')
+      }
+
+      const data = await response.json()
+
+      setConversationId(data.id)
+      setLead(data.lead_data || {})
+      setMessages(
+        data.messages.length > 0
+          ? data.messages.map((item) => ({
+              role: item.role,
+              content: item.content
+            }))
+          : [WELCOME_MESSAGE]
+      )
+      setVisitFormPropertyId(null)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const startNewConversation = () => {
+    setConversationId(null)
+    setLead({})
+    setMessages([WELCOME_MESSAGE])
+    setVisitFormPropertyId(null)
+  }
 
     const loadProperties = async () => {
     try {
@@ -74,12 +160,14 @@ function App() {
 
   searchProperties({
     city: lead.city || undefined,
+    operation: lead.operation || undefined,
     property_type: lead.property_type || undefined,
     max_price: lead.max_price || undefined,
     bedrooms: lead.bedrooms || undefined
   })
 }, [
   lead.city,
+  lead.operation,
   lead.property_type,
   lead.max_price,
   lead.bedrooms
@@ -131,6 +219,8 @@ function App() {
           content: data.assistant_message
         }
       ])
+
+      loadConversations()
     } catch (error) {
       console.error(error)
 
@@ -232,41 +322,41 @@ function App() {
         <aside className="conversations">
           <div className="panel-title">
             <h2>Conversaciones</h2>
-            <span>3</span>
+            <span>{conversations.length}</span>
           </div>
 
-          <div className="conversation active">
-            <div className="avatar">CL</div>
+          <div
+            className={`conversation ${conversationId === null ? 'active' : ''}`}
+            onClick={startNewConversation}
+          >
+            <div className="avatar">+</div>
 
             <div className="conversation-info">
-              <strong>Cliente #001</strong>
-              <p>Busco un piso en León...</p>
+              <strong>Nueva conversación</strong>
+              <p>Empezar de cero</p>
             </div>
-
-            <small>Ahora</small>
           </div>
 
-          <div className="conversation">
-            <div className="avatar">MR</div>
+          {conversations.map((conversation) => {
+            const name = conversation.lead_data?.name
 
-            <div className="conversation-info">
-              <strong>Cliente #002</strong>
-              <p>Quería información sobre...</p>
-            </div>
+            return (
+              <div
+                key={conversation.id}
+                className={`conversation ${conversation.id === conversationId ? 'active' : ''}`}
+                onClick={() => selectConversation(conversation.id)}
+              >
+                <div className="avatar">{getInitials(name)}</div>
 
-            <small>10:42</small>
-          </div>
+                <div className="conversation-info">
+                  <strong>{name || `Lead #${conversation.id}`}</strong>
+                  <p>{conversation.last_message?.content || 'Sin mensajes'}</p>
+                </div>
 
-          <div className="conversation">
-            <div className="avatar">AP</div>
-
-            <div className="conversation-info">
-              <strong>Cliente #003</strong>
-              <p>¿Aceptan mascotas?</p>
-            </div>
-
-            <small>Ayer</small>
-          </div>
+                <small>{formatConversationTime(conversation.updated_at)}</small>
+              </div>
+            )
+          })}
         </aside>
 
 
@@ -275,7 +365,7 @@ function App() {
 
           <div className="chat-header">
             <div>
-              <h2>Cliente #001</h2>
+              <h2>{lead.name || (conversationId ? `Lead #${conversationId}` : 'Nueva conversación')}</h2>
               <p>Conversación con agente IA</p>
             </div>
 

@@ -107,6 +107,50 @@ def get_conversation(conversation_id: int) -> dict | None:
     }
 
 
+def list_conversations() -> list[dict]:
+    """
+    Devuelve un resumen de todas las conversaciones (para el listado
+    de leads), con el último mensaje y ordenadas por actividad
+    reciente.
+    """
+
+    connection = get_connection()
+
+    conversations = connection.execute(
+        """
+        SELECT *
+        FROM conversations
+        ORDER BY updated_at DESC
+        """
+    ).fetchall()
+
+    summaries = []
+
+    for conversation in conversations:
+        last_message = connection.execute(
+            """
+            SELECT role, content
+            FROM messages
+            WHERE conversation_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (conversation["id"],)
+        ).fetchone()
+
+        summaries.append({
+            "id": conversation["id"],
+            "lead_data": json.loads(conversation["lead_data"]),
+            "created_at": conversation["created_at"],
+            "updated_at": conversation["updated_at"],
+            "last_message": dict(last_message) if last_message else None,
+        })
+
+    connection.close()
+
+    return summaries
+
+
 def update_lead_data(
     conversation_id: int,
     lead_data: dict

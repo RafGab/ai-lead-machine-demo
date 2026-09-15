@@ -1,12 +1,14 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.database.database import get_connection
+from backend.services.normalization import normalize_operation, normalize_property_type
 
 router = APIRouter()
 
 
 class SearchRequest(BaseModel):
     city: str | None = None
+    operation: str | None = None
     property_type: str | None = None
     max_price: float | None = None
     bedrooms: int | None = None
@@ -29,9 +31,13 @@ def search_properties(request: SearchRequest):
         query += " AND city = ?"
         parameters.append(request.city)
 
+    if request.operation:
+        query += " AND operation = ?"
+        parameters.append(normalize_operation(request.operation))
+
     if request.property_type:
         query += " AND property_type = ?"
-        parameters.append(request.property_type)
+        parameters.append(normalize_property_type(request.property_type))
 
     if request.max_price is not None:
         query += " AND price <= ?"
