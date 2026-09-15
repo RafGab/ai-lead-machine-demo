@@ -1,11 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.routes.properties import router as properties_router
 from backend.routes.search import router as search_router
 from backend.routes.conversation import router as conversation_router
+from backend.database.database import create_tables
+
+
 
 app = FastAPI()
+
+app.mount("/properties", StaticFiles(directory="frontend/public/properties"), name="properties")
+
+create_tables()  # Create tables if they don't exist
 
 app.add_middleware(
     CORSMiddleware,

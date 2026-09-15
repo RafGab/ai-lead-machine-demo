@@ -29,6 +29,27 @@ def get_properties(
 
     rows = connection.execute(query, parameters).fetchall()
 
+    properties = []
+
+    for row in rows:
+        property_data = dict(row)
+
+        images = connection.execute(
+            """
+            SELECT image_url
+            FROM property_images
+            WHERE property_id = ?
+            """,
+            (property_data["id"],)
+        ).fetchall()
+
+        property_data["images"] = [
+            image["image_url"]
+            for image in images
+        ]
+
+        properties.append(property_data)
+
     connection.close()
 
-    return [dict(row) for row in rows]
+    return properties

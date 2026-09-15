@@ -341,3 +341,56 @@ input {
     padding: 20px;
   }
 }
+
+.property-card {
+  overflow: hidden;
+}
+
+.property-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.property-card:hover .property-image {
+  transform: scale(1.05);
+
+}
+.property-content {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.property-content h3 {
+  margin: 0 0 4px 0;
+  line-height: 1.25;
+}
+
+.property-content p {
+  margin: 0;
+  line-height: 1.3;
+}
+
+.property-content strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.property-content span {
+  display: block;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+.property-card {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}

@@ -18,6 +18,21 @@ def find_matching_properties(lead: Lead) -> list[dict]:
         query += " AND city = ?"
         parameters.append(lead.city)
 
+    if lead.operation:
+        operation_map = {
+            "compra": "venta",
+            "venta": "venta",
+            "alquiler": "alquiler",
+        }
+
+        normalized_operation = operation_map.get(
+            lead.operation.lower(),
+            lead.operation.lower()
+        )
+
+        query += " AND operation = ?"
+        parameters.append(normalized_operation)
+
     if lead.property_type:
        property_type_map = {
         "piso": "vivienda",

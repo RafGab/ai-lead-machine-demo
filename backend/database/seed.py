@@ -8,6 +8,7 @@ properties = [
         "city": "León",
         "price": 390,
         "bedrooms": 1,
+        "image": "/properties/habitacion-centro-1.jpg",
     },
     {
         "title": "Habitación individual en zona centro",
@@ -16,6 +17,8 @@ properties = [
         "city": "León",
         "price": 420,
         "bedrooms": 1,
+        "image": "/properties/habitacion-centro-1.jpg",
+        
     },
     {
         "title": "Piso de 3 habitaciones cerca del centro",
@@ -39,7 +42,7 @@ properties = [
 connection = get_connection()
 
 for property_data in properties:
-    connection.execute(
+    cursor = connection.execute(
         """
         INSERT INTO properties
         (title, operation, property_type, city, price, bedrooms)
@@ -54,6 +57,17 @@ for property_data in properties:
             property_data["bedrooms"],
         ),
     )
+
+    image_url = property_data.get("image")
+
+    if image_url:
+        connection.execute(
+            """
+            INSERT INTO property_images (property_id, image_url)
+            VALUES (?, ?)
+            """,
+            (cursor.lastrowid, image_url),
+        )
 
 connection.commit()
 connection.close()

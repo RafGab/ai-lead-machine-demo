@@ -1,3 +1,5 @@
+import logging
+
 from backend.models.lead import Lead
 from backend.services.ai_service import extract_lead_data
 from backend.services.questions import get_next_question
@@ -9,6 +11,8 @@ from backend.services.conversation_repository import (
     get_conversation,
     update_lead_data,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def process_lead(lead: Lead) -> dict:
@@ -109,21 +113,45 @@ def process_message(
     )
 
     # ---------------------------------------------------------
-    # 3. Extraer información del mensaje
-    # ---------------------------------------------------------
-
-    ai_data = extract_lead_data(message)
-
-    new_data = ai_data.model_dump()
-
-    # ---------------------------------------------------------
-    # 4. Recuperar Lead anterior
+    # 3. Recuperar Lead anterior
     # ---------------------------------------------------------
 
     existing_lead = conversation.get(
         "lead_data",
         {}
     )
+
+    # ---------------------------------------------------------
+    # 4. Extraer información del mensaje
+    # ---------------------------------------------------------
+
+    try:
+        ai_data = extract_lead_data(message)
+        new_data = ai_data.model_dump()
+    except Exception:
+        logger.exception(
+            "Fallo al extraer datos del lead con la IA "
+            "(conversation_id=%s)",
+            conversation_id
+        )
+
+        assistant_message = (
+            "Lo siento, ahora mismo no puedo procesar tu mensaje. "
+            "Inténtalo de nuevo en unos segundos."
+        )
+
+        save_message(
+            conversation_id,
+            "assistant",
+            assistant_message
+        )
+
+        return {
+            "conversation_id": conversation_id,
+            "lead": existing_lead,
+            "result": {"status": "error"},
+            "assistant_message": assistant_message
+        }
 
     # ---------------------------------------------------------
     # 5. Combinar información anterior + nueva

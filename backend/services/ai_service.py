@@ -35,65 +35,84 @@ def get_openai_client() -> OpenAI:
     return OpenAI(api_key=api_key)
 
 
-def extract_lead_data(message: str) -> AILeadData:
+def extract_lead_data(
+    message: str,
+    conversation_history: list[dict] | None = None
+) -> AILeadData:
     """
     Utiliza OpenAI para analizar el mensaje del cliente
-    y extraer los datos relevantes del lead.
-
-    Si un dato no aparece en el mensaje, devuelve None.
+    teniendo en cuenta el historial de la conversación.
     """
 
     client = get_openai_client()
 
+    input_messages = [
+        {
+            "role": "system",
+            "content": (
+                "Eres un asistente especializado en captación "
+                "de leads inmobiliarios.\n\n"
+
+                "Analiza la conversación y extrae únicamente "
+                "información que esté presente o que pueda "
+                "deducirse claramente.\n\n"
+
+                "No inventes información.\n"
+                "Si un dato no está presente, devuelve None.\n\n"
+
+                "Para operation utiliza únicamente:\n"
+                "- alquiler\n"
+                "- compra\n\n"
+
+                "Para property_type utiliza valores como:\n"
+                "- vivienda\n"
+                "- piso\n"
+                "- apartamento\n"
+                "- casa\n"
+                "- chalet\n"
+                "- habitacion\n\n"
+
+                "Si el cliente indica que NO tiene menores, "
+                "has_minors debe ser False.\n"
+
+                "Si el cliente indica que NO tiene mascotas, "
+                "has_pets debe ser False.\n"
+
+                "Si el cliente indica que sí tiene menores, "
+                "has_minors debe ser True.\n"
+
+                "Si el cliente indica que sí tiene mascotas, "
+                "has_pets debe ser True.\n\n"
+
+                "Para occupants utiliza el número de personas "
+                "que vivirán en el inmueble cuando esté indicado.\n\n"
+
+                "MUY IMPORTANTE: interpreta las respuestas "
+                "cortas como 'sí' o 'no' teniendo en cuenta "
+                "la pregunta inmediatamente anterior."
+            ),
+        }
+    ]
+
+    if conversation_history:
+        for item in conversation_history:
+            input_messages.append(
+                {
+                    "role": item["role"],
+                    "content": item["content"],
+                }
+            )
+
+    input_messages.append(
+        {
+            "role": "user",
+            "content": message,
+        }
+    )
+
     response = client.responses.parse(
-        model="gpt-5.6-luna",
-        input=[
-            {
-                "role": "system",
-                "content": (
-                    "Eres un asistente especializado en captación "
-                    "de leads inmobiliarios.\n\n"
-
-                    "Analiza el mensaje del cliente y extrae "
-                    "únicamente información que esté presente "
-                    "o que pueda deducirse claramente del mensaje.\n\n"
-
-                    "No inventes información.\n"
-                    "Si un dato no está presente, devuelve None.\n\n"
-
-                    "Para operation utiliza únicamente:\n"
-                    "- alquiler\n"
-                    "- compra\n\n"
-
-                    "Para property_type utiliza valores como:\n"
-                    "- vivienda\n"
-                    "- piso\n"
-                    "- apartamento\n"
-                    "- casa\n"
-                    "- chalet\n"
-                    "- habitacion\n\n"
-
-                    "Si el cliente indica que NO tiene menores, "
-                    "has_minors debe ser False.\n"
-
-                    "Si el cliente indica que NO tiene mascotas, "
-                    "has_pets debe ser False.\n"
-
-                    "Si el cliente indica que sí tiene menores, "
-                    "has_minors debe ser True.\n"
-
-                    "Si el cliente indica que sí tiene mascotas, "
-                    "has_pets debe ser True.\n\n"
-
-                    "Para occupants utiliza el número de personas "
-                    "que vivirán en el inmueble cuando esté indicado."
-                ),
-            },
-            {
-                "role": "user",
-                "content": message,
-            },
-        ],
+        model="gpt-4o-mini",
+        input=input_messages,
         text_format=AILeadData,
     )
 

@@ -14,6 +14,7 @@ class SearchRequest(BaseModel):
 
 @router.post("/search")
 def search_properties(request: SearchRequest):
+
     connection = get_connection()
 
     query = """
@@ -42,9 +43,31 @@ def search_properties(request: SearchRequest):
 
     rows = connection.execute(query, parameters).fetchall()
 
+    properties = []
+
+    for row in rows:
+
+        property_data = dict(row)
+
+        images = connection.execute(
+            """
+            SELECT image_url
+            FROM property_images
+            WHERE property_id = ?
+            """,
+            (property_data["id"],)
+        ).fetchall()
+
+        property_data["images"] = [
+            image["image_url"]
+            for image in images
+        ]
+
+        properties.append(property_data)
+
     connection.close()
 
     return {
-        "total": len(rows),
-        "results": [dict(row) for row in rows]
+        "total": len(properties),
+        "results": properties
     }

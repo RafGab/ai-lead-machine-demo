@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 function App() {
   const [message, setMessage] = useState('')
+  const [properties, setProperties] = useState([])
   const [conversationId, setConversationId] = useState(null)
   const [lead, setLead] = useState({})
   const [messages, setMessages] = useState([
@@ -13,66 +14,127 @@ function App() {
     }
   ])
 
-  const sendMessage = async () => {
-  if (!message.trim()) return
+    const loadProperties = async () => {
+    try {
+      const response = await fetch(
+        'http://127.0.0.1:8000/properties'
+      )
 
-  const userMessage = message
+      if (!response.ok) {
+        throw new Error('No se pudieron cargar las propiedades')
+      }
 
-  setMessages((currentMessages) => [
-    ...currentMessages,
-    {
-      role: 'user',
-      content: userMessage
+      const data = await response.json()
+
+      setProperties(data)
+    } catch (error) {
+      console.error(error)
     }
-  ])
+  }
 
-  setMessage('')
-
+  const searchProperties = async (criteria) => {
   try {
     const response = await fetch(
-      'http://127.0.0.1:8000/conversations/message',
+      'http://127.0.0.1:8000/search',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          message: userMessage,
-          conversation_id: conversationId
-     })
+        body: JSON.stringify(criteria)
       }
     )
 
     if (!response.ok) {
-      throw new Error('Error al comunicarse con el servidor')
+      throw new Error('No se pudieron buscar propiedades')
     }
 
     const data = await response.json()
-    
-    setConversationId(data.conversation_id)
-    setLead(data.lead)
 
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      {
-        role: 'assistant',
-        content: data.assistant_message
-      }
-    ])
+    setProperties(data.results)
   } catch (error) {
     console.error(error)
-
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      {
-        role: 'assistant',
-        content:
-          'Lo siento, ha ocurrido un problema al conectar con el agente.'
-      }
-    ])
   }
 }
 
+  useEffect(() => {
+  if (!lead.city && !lead.property_type && !lead.max_price) {
+    loadProperties()
+    return
+  }
+
+  searchProperties({
+    city: lead.city || undefined,
+    property_type: lead.property_type || undefined,
+    max_price: lead.max_price || undefined,
+    bedrooms: lead.bedrooms || undefined
+  })
+}, [
+  lead.city,
+  lead.property_type,
+  lead.max_price,
+  lead.bedrooms
+])
+
+  const sendMessage = async () => {
+    if (!message.trim()) return
+
+    const userMessage = message
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      {
+        role: 'user',
+        content: userMessage
+      }
+    ])
+
+    setMessage('')
+
+    try {
+      const response = await fetch(
+        'http://127.0.0.1:8000/conversations/message',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            conversation_id: conversationId
+          })
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Error al comunicarse con el servidor')
+      }
+
+      const data = await response.json()
+
+      setConversationId(data.conversation_id)
+      setLead(data.lead)
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          role: 'assistant',
+          content: data.assistant_message
+        }
+      ])
+    } catch (error) {
+      console.error(error)
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          role: 'assistant',
+          content:
+            'Lo siento, ha ocurrido un problema al conectar con el agente.'
+        }
+      ])
+    }
+  }
   return (
     <div className="app">
 
@@ -191,6 +253,62 @@ function App() {
 
         </section>
 
+                {/* PROPIEDADES */}
+        <section className="properties-panel">
+
+          <div className="properties-header">
+            <h2>Propiedades disponibles</h2>
+            <span>{properties.length}</span>
+          </div>
+
+          <div className="properties-grid">
+
+            {properties.map((property) => (
+
+              <article
+                className="property-card"
+                key={property.id}
+              >
+
+                {property.images?.length > 0 && (
+                  <img
+                    src={`http://127.0.0.1:8000${property.images[0]}`}
+                    alt={property.title}
+                    className="property-image"
+                  />
+                )}
+
+                <div className="property-content">
+
+                  <h3>{property.title}</h3>
+
+                  <p>
+                    {property.city}
+                  </p>
+
+                  <strong>
+                    {property.operation === 'venta'
+  ? `${property.price.toLocaleString('es-ES')} €`
+  : `${property.price.toLocaleString('es-ES')} €/mes`}
+                  </strong>
+
+                  {property.bedrooms && (
+                    <span>
+                      🛏️ {property.bedrooms} habitación
+                      {property.bedrooms > 1 ? 'es' : ''}
+                    </span>
+                  )}
+
+                </div>
+
+              </article>
+
+            ))}
+
+          </div>
+
+        </section>
+
 
         {/* INFORMACIÓN DEL LEAD */}
         <aside className="lead-panel">
@@ -216,12 +334,12 @@ function App() {
             <strong>{lead.city || '—'}</strong>
           </div>
 
-          <div className="lead-section">
-            <span className="label">Presupuesto máximo</span>
-             <strong>
-           {lead.max_price ? `${lead.max_price} €/mes` : '—'}
-             </strong>
-          </div>
+            <div className="lead-section">
+              <span className="label">Presupuesto máximo</span>
+              <strong>
+            {lead.max_price ? `${lead.max_price} €/mes` : '—'}
+              </strong>
+            </div>
 
           <div className="lead-section">
             <span className="label">Entrada</span>
