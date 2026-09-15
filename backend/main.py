@@ -8,6 +8,8 @@ from backend.routes.search import router as search_router
 from backend.routes.conversation import router as conversation_router
 from backend.routes.visits import router as visits_router
 from backend.routes.webhooks import router as webhooks_router
+from backend.routes.study_leads import router as study_leads_router
+from backend.routes.reviews import router as reviews_router
 from backend.database.database import create_tables
 
 
@@ -50,3 +52,5 @@ app.include_router(search_router)
 app.include_router(conversation_router)
 app.include_router(visits_router)
 app.include_router(webhooks_router)
+app.include_router(study_leads_router)
+app.include_router(reviews_router)
