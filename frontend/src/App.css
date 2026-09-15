@@ -269,22 +269,56 @@ button {
   justify-content: flex-end;
 }
 
-.message-bubble {
+.message-card {
   max-width: 65%;
-  padding: 12px 15px;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.message-bubble {
+  padding: 12px 15px;
   font-size: 13px;
   line-height: 1.55;
-  box-shadow: var(--shadow-sm);
+}
+
+.message.user .message-card {
+  background: var(--primary);
+  border: none;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
 }
 
 .message.user .message-bubble {
+  color: white;
+}
+
+.quick-options-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.quick-option-row {
+  border: none;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: var(--primary);
+  padding: 12px 15px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.quick-option-row:hover {
+  background: var(--primary-light);
+}
+
+.quick-option-row:active {
   background: var(--primary);
   color: white;
-  border: none;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
 }
 
 .message-input {

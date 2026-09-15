@@ -113,13 +113,21 @@ def merge_lead_data(
 
 def process_message(
     message: str,
-    conversation_id: int | None = None
+    conversation_id: int | None = None,
+    field: str | None = None,
+    value=None
 ) -> dict:
     """
     Procesa un mensaje dentro de una conversación.
 
     Si no se proporciona conversation_id, crea una
     nueva conversación automáticamente.
+
+    Si se indican field/value (respuesta a un botón de opción rápida
+    del frontend), el dato se guarda directamente y NO se llama a la
+    IA para esta interacción: el usuario eligió una opción del
+    catálogo, no hay nada que interpretar, y así evitamos que la IA
+    "adivine" o pise otros campos por error.
     """
 
     # ---------------------------------------------------------
@@ -173,43 +181,52 @@ def process_message(
             "conversation_id": conversation_id,
             "lead": existing_lead,
             "result": {"status": "closed"},
-            "assistant_message": assistant_message
+            "assistant_message": assistant_message,
+            "options": None,
+            "options_field": None
         }
 
     # ---------------------------------------------------------
     # 4. Extraer información del mensaje
     # ---------------------------------------------------------
 
-    try:
-        ai_data = extract_lead_data(
-            message,
-            conversation_history=conversation.get("messages", [])
-        )
-        new_data = ai_data.model_dump()
-    except Exception:
-        logger.exception(
-            "Fallo al extraer datos del lead con la IA "
-            "(conversation_id=%s)",
-            conversation_id
-        )
+    if field:
+        # Respuesta a un botón: el valor ya es correcto y viene
+        # directo del catálogo, no hace falta la IA.
+        new_data = {field: value}
+    else:
+        try:
+            ai_data = extract_lead_data(
+                message,
+                conversation_history=conversation.get("messages", [])
+            )
+            new_data = ai_data.model_dump()
+        except Exception:
+            logger.exception(
+                "Fallo al extraer datos del lead con la IA "
+                "(conversation_id=%s)",
+                conversation_id
+            )
 
-        assistant_message = (
-            "Lo siento, ahora mismo no puedo procesar tu mensaje. "
-            "Inténtalo de nuevo en unos segundos."
-        )
+            assistant_message = (
+                "Lo siento, ahora mismo no puedo procesar tu mensaje. "
+                "Inténtalo de nuevo en unos segundos."
+            )
 
-        save_message(
-            conversation_id,
-            "assistant",
-            assistant_message
-        )
+            save_message(
+                conversation_id,
+                "assistant",
+                assistant_message
+            )
 
-        return {
-            "conversation_id": conversation_id,
-            "lead": existing_lead,
-            "result": {"status": "error"},
-            "assistant_message": assistant_message
-        }
+            return {
+                "conversation_id": conversation_id,
+                "lead": existing_lead,
+                "result": {"status": "error"},
+                "assistant_message": assistant_message,
+                "options": None,
+                "options_field": None
+            }
 
     # ---------------------------------------------------------
     # 5. Combinar información anterior + nueva
@@ -247,10 +264,14 @@ def process_message(
     # ---------------------------------------------------------
 
     assistant_message = None
+    options = None
+    options_field = None
 
     if result.get("question"):
 
-        assistant_message = result["question"]
+        assistant_message = result["question"]["text"]
+        options = result["question"].get("options")
+        options_field = result["question"].get("field")
 
     elif result.get("status") == "matches_found":
 
@@ -317,5 +338,7 @@ def process_message(
         "conversation_id": conversation_id,
         "lead": lead.model_dump(),
         "result": result,
-        "assistant_message": assistant_message
+        "assistant_message": assistant_message,
+        "options": options,
+        "options_field": options_field
     }

@@ -25,6 +25,16 @@ function App() {
   })
   const [visitStatusByProperty, setVisitStatusByProperty] = useState({})
   const [conversations, setConversations] = useState([])
+  // Coincide con la primera pregunta real de questions.py, para no
+  // necesitar una llamada al backend solo para mostrar los botones
+  // iniciales.
+  const INITIAL_OPTIONS = [
+    { label: 'Alquilar', value: 'alquiler' },
+    { label: 'Comprar', value: 'compra' }
+  ]
+  const INITIAL_OPTIONS_FIELD = 'operation'
+  const [quickOptions, setQuickOptions] = useState(INITIAL_OPTIONS)
+  const [quickOptionsField, setQuickOptionsField] = useState(INITIAL_OPTIONS_FIELD)
   const WELCOME_MESSAGE = {
     role: 'assistant',
     content:
@@ -106,6 +116,8 @@ function App() {
           : [WELCOME_MESSAGE]
       )
       setVisitFormPropertyId(null)
+      setQuickOptions(null)
+      setQuickOptionsField(null)
     } catch (error) {
       console.error(error)
     }
@@ -116,6 +128,8 @@ function App() {
     setLead({})
     setMessages([WELCOME_MESSAGE])
     setVisitFormPropertyId(null)
+    setQuickOptions(INITIAL_OPTIONS)
+    setQuickOptionsField(INITIAL_OPTIONS_FIELD)
   }
 
     const loadProperties = async () => {
@@ -184,10 +198,9 @@ function App() {
   lead.bathrooms
 ])
 
-  const sendMessage = async () => {
-    if (!message.trim()) return
-
-    const userMessage = message
+  const sendMessage = async (overrideOption) => {
+    const userMessage = (overrideOption ? overrideOption.label : message).trim()
+    if (!userMessage) return
 
     setMessages((currentMessages) => [
       ...currentMessages,
@@ -198,6 +211,8 @@ function App() {
     ])
 
     setMessage('')
+    setQuickOptions(null)
+    setQuickOptionsField(null)
 
     try {
       const response = await fetch(
@@ -209,7 +224,9 @@ function App() {
           },
           body: JSON.stringify({
             message: userMessage,
-            conversation_id: conversationId
+            conversation_id: conversationId,
+            field: overrideOption ? quickOptionsField : undefined,
+            value: overrideOption ? overrideOption.value : undefined
           })
         }
       )
@@ -230,6 +247,9 @@ function App() {
           content: data.assistant_message
         }
       ])
+
+      setQuickOptions(data.options && data.options.length > 0 ? data.options : null)
+      setQuickOptionsField(data.options_field || null)
 
       loadConversations()
     } catch (error) {
@@ -397,19 +417,42 @@ function App() {
 
           <div className="messages">
 
-            {messages.map((item, index) => (
-              <div
-                key={index}
-                className={`message ${item.role}`}
-              >
-                <div className="message-bubble">
-                  {item.content}
+            {messages.map((item, index) => {
+              const showOptions =
+                quickOptions &&
+                item.role === 'assistant' &&
+                index === messages.length - 1
+
+              return (
+                <div
+                  key={index}
+                  className={`message ${item.role}`}
+                >
+                  <div className="message-card">
+                    <div className="message-bubble">
+                      {item.content}
+                    </div>
+
+                    {showOptions && (
+                      <div className="quick-options-list">
+                        {quickOptions.map((option) => (
+                          <button
+                            type="button"
+                            key={option.label}
+                            className="quick-option-row"
+                            onClick={() => sendMessage(option)}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
           </div>
-
 
           <div className="message-input">
 
@@ -425,7 +468,7 @@ function App() {
               }}
             />
 
-            <button onClick={sendMessage}>
+            <button onClick={() => sendMessage()}>
               Enviar
             </button>
 

@@ -46,6 +46,21 @@ def find_matching_properties(lead: Lead) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def get_available_cities() -> list[str]:
+    connection = get_connection()
+
+    cities = [
+        row["city"]
+        for row in connection.execute(
+            "SELECT DISTINCT city FROM properties WHERE available = 1 ORDER BY city"
+        ).fetchall()
+    ]
+
+    connection.close()
+
+    return cities
+
+
 def explain_no_matches(lead: Lead) -> str:
     """
     Cuando no hay resultados, explica el motivo más probable en vez
@@ -61,13 +76,8 @@ def explain_no_matches(lead: Lead) -> str:
         ).fetchone()[0]
 
         if city_has_properties == 0:
-            available_cities = [
-                row["city"]
-                for row in connection.execute(
-                    "SELECT DISTINCT city FROM properties WHERE available = 1 ORDER BY city"
-                ).fetchall()
-            ]
             connection.close()
+            available_cities = get_available_cities()
 
             return (
                 f"Todavía no tenemos propiedades en {lead.city}. "

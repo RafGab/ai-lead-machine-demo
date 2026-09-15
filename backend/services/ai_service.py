@@ -136,6 +136,7 @@ def extract_lead_data(
         model="gpt-4o-mini",
         input=input_messages,
         text_format=AILeadData,
+        temperature=0,
     )
 
     return response.output_parsed
