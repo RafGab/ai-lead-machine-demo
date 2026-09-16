@@ -1,6 +1,7 @@
+import os
 import sqlite3
 
-DATABASE_NAME = "ai_lead_machine.db"
+DATABASE_NAME = os.getenv("DATABASE_PATH", "ai_lead_machine.db")
 
 
 def get_connection():

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ai-lead-machine-backend
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ADMIN_KEY
+        sync: false
+      - key: DATABASE_PATH
+        value: /data/ai_lead_machine.db
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
