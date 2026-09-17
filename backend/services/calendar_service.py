@@ -110,10 +110,24 @@ def create_visit_event(
     return response.json()["id"]
 
 
-BUSINESS_HOURS_START = 10
-BUSINESS_HOURS_END = 19
+def _parse_business_days(raw: str) -> set[int]:
+    return {int(day.strip()) for day in raw.split(",") if day.strip() != ""}
+
+
+# Horario y días de atención, configurables por cliente vía variables de
+# entorno (para no tocar código al adaptar el agente a cada negocio):
+#   BUSINESS_HOURS_START / BUSINESS_HOURS_END: hora de inicio/fin (0-23)
+#   BUSINESS_DAYS: días de la semana como enteros separados por coma,
+#     Monday=0 ... Sunday=6 (por defecto "0,1,2,3,4" = lunes a viernes)
+BUSINESS_HOURS_START = int(os.getenv("BUSINESS_HOURS_START", "10"))
+BUSINESS_HOURS_END = int(os.getenv("BUSINESS_HOURS_END", "19"))
+BUSINESS_DAYS = _parse_business_days(os.getenv("BUSINESS_DAYS", "0,1,2,3,4"))
 SLOT_STEP = timedelta(minutes=30)
 SEARCH_WINDOW = timedelta(days=5)
+
+
+def _within_business_hours(moment: datetime) -> bool:
+    return moment.weekday() in BUSINESS_DAYS and BUSINESS_HOURS_START <= moment.hour < BUSINESS_HOURS_END
 
 
 def _get_busy_periods(
@@ -164,7 +178,8 @@ def _overlaps(
 
 def is_slot_available(scheduled_at: str) -> bool:
     """
-    Comprueba si el comercial está libre en la franja solicitada.
+    Comprueba si el horario solicitado cae dentro de la franja de
+    atención configurada y si el comercial está libre en ese momento.
 
     Lanza CalendarNotConfigured si el calendario no está configurado
     (en ese caso no se puede saber la disponibilidad de antemano).
@@ -173,7 +188,14 @@ def is_slot_available(scheduled_at: str) -> bool:
     start_dt = datetime.fromisoformat(scheduled_at)
     end_dt = start_dt + VISIT_DURATION
 
+    # Se consulta el calendario primero: si no está configurado, esto
+    # lanza CalendarNotConfigured igual que antes (sin este cambio),
+    # así que el resto del flujo no se ve afectado cuando no hay
+    # credenciales de Google Calendar todavía.
     busy_periods = _get_busy_periods(start_dt, end_dt)
+
+    if not _within_business_hours(start_dt):
+        return False
 
     return not _overlaps(start_dt, end_dt, busy_periods)
 
@@ -197,7 +219,7 @@ def suggest_alternative_slots(scheduled_at: str, count: int = 3) -> list[str]:
     cursor = window_start
 
     while cursor < window_end and len(suggestions) < count:
-        if cursor.hour >= BUSINESS_HOURS_END:
+        if cursor.weekday() not in BUSINESS_DAYS or cursor.hour >= BUSINESS_HOURS_END:
             cursor = (cursor + timedelta(days=1)).replace(
                 hour=BUSINESS_HOURS_START, minute=0
             )
