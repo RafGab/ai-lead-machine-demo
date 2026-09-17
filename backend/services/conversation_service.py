@@ -1,4 +1,5 @@
 import logging
+import time
 
 from backend.models.lead import Lead
 from backend.services.ai_service import extract_lead_data
@@ -195,17 +196,30 @@ def process_message(
         # directo del catálogo, no hace falta la IA.
         new_data = {field: value}
     else:
-        try:
-            ai_data = extract_lead_data(
-                message,
-                conversation_history=conversation.get("messages", [])
-            )
-            new_data = ai_data.model_dump()
-        except Exception:
+        # Un fallo puntual de red/OpenAI no debería mostrarle un error al
+        # cliente si con un solo reintento se resuelve solo.
+        last_error = None
+        new_data = None
+
+        for attempt in range(2):
+            try:
+                ai_data = extract_lead_data(
+                    message,
+                    conversation_history=conversation.get("messages", [])
+                )
+                new_data = ai_data.model_dump()
+                break
+            except Exception as error:
+                last_error = error
+                if attempt == 0:
+                    time.sleep(1)
+
+        if new_data is None:
             logger.exception(
-                "Fallo al extraer datos del lead con la IA "
+                "Fallo al extraer datos del lead con la IA tras reintentar "
                 "(conversation_id=%s)",
-                conversation_id
+                conversation_id,
+                exc_info=last_error,
             )
 
             assistant_message = (
