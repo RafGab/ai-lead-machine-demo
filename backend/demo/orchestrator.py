@@ -2,6 +2,7 @@ import logging
 import time
 
 from backend.demo import repository
+from backend.demo.ai_helper import generate_followup_reply
 from backend.demo.verticals import GENERIC_VERTICALS
 from backend.services.conversation_service import (
     process_message as process_inmobiliaria_message,
@@ -49,23 +50,6 @@ def process_demo_message(
 
     existing_data = conversation.get("lead_data", {})
 
-    if conversation.get("status") == "completed":
-        assistant_message = (
-            "Ya tengo todos tus datos registrados y en breve te contactamos. "
-            "Si quieres agregar algo más, cuéntamelo y lo anoto. 🙂"
-        )
-        repository.save_message(conversation_id, "assistant", assistant_message)
-
-        return {
-            "conversation_id": conversation_id,
-            "vertical": vertical,
-            "lead": existing_data,
-            "result": {"status": "completed"},
-            "assistant_message": assistant_message,
-            "options": None,
-            "options_field": None,
-        }
-
     if is_closing_message(message):
         assistant_message = (
             "¡Perfecto! Si quieres retomarlo más adelante, aquí estaré. "
@@ -78,6 +62,52 @@ def process_demo_message(
             "vertical": vertical,
             "lead": existing_data,
             "result": {"status": "closed"},
+            "assistant_message": assistant_message,
+            "options": None,
+            "options_field": None,
+        }
+
+    if conversation.get("status") == "completed":
+        # Ya se recogieron todos los datos: en vez de repetir siempre el
+        # mismo texto, respondemos de verdad a lo que pregunte, sin
+        # volver a pedirle sus datos de contacto ni inventar cifras
+        # concretas (precios, disponibilidad exacta) que no conocemos.
+        followup_prompt = (
+            module.SYSTEM_PROMPT
+            + "\n\nYa terminaste de recoger los datos de esta persona para "
+            "agendar/reservar/registrar su caso — no vuelvas a pedirle "
+            "nombre, teléfono ni el resto de datos ya conocidos. Ahora "
+            "solo debes responder de forma útil y breve a lo que "
+            "pregunte, en el mismo tono del negocio. No conoces datos "
+            "operativos concretos del negocio real (precios exactos, "
+            "horarios de apertura, disponibilidad en tiempo real, "
+            "direcciones, políticas internas) salvo lo que ya se haya "
+            "mencionado en esta conversación — para cualquiera de esos "
+            "datos que no conozcas, dilo con honestidad y ofrece que el "
+            "equipo se lo confirme pronto. No inventes cifras, horarios "
+            "ni otros datos concretos que no tengas."
+        )
+
+        try:
+            assistant_message = generate_followup_reply(
+                followup_prompt, message, conversation_history=conversation.get("messages", [])
+            )
+        except Exception:
+            logger.exception(
+                "Fallo al generar respuesta de seguimiento post-registro (vertical=%s, conversation_id=%s)",
+                vertical, conversation_id,
+            )
+            assistant_message = (
+                "Lo siento, ahora mismo no puedo procesar tu mensaje. Inténtalo de nuevo en unos segundos."
+            )
+
+        repository.save_message(conversation_id, "assistant", assistant_message)
+
+        return {
+            "conversation_id": conversation_id,
+            "vertical": vertical,
+            "lead": existing_data,
+            "result": {"status": "completed"},
             "assistant_message": assistant_message,
             "options": None,
             "options_field": None,
