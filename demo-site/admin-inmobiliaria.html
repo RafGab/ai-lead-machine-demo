@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Lead Machine — Panel Inmobiliaria</title>
+<style>
+  :root {
+    --ink: #14121f; --ink-soft: #6b6478; --paper: #fbfaff; --surface: #f3f1fb;
+    --line: #e3e0f5; --accent: #4f3ff0; --accent-dark: #372ec9; --green: #12b3a3; --red: #ab263e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--surface); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; padding: 24px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; }
+
+  .key-bar { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+  .key-bar input { flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+  .key-bar button { padding: 10px 20px; border: none; border-radius: 8px; background: var(--accent); color: white; font-weight: 600; cursor: pointer; }
+
+  h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-dark); border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-top: 40px; }
+
+  .new-form { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .new-form { grid-template-columns: 1fr; } }
+  .new-form label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; }
+  .new-form input, .new-form select { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+  .new-form .full { grid-column: 1 / -1; }
+  .new-form button { grid-column: 1 / -1; padding: 12px; border: none; border-radius: 8px; background: var(--accent); color: white; font-weight: 700; cursor: pointer; margin-top: 4px; }
+
+  .property-card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 14px; }
+  .property-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+  .property-head strong { font-size: 16px; }
+  .property-meta { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .badge.on { background: color-mix(in srgb, var(--green) 18%, white); color: var(--green); }
+  .badge.off { background: color-mix(in srgb, var(--red) 15%, white); color: var(--red); }
+
+  .actions { display: flex; gap: 8px; }
+  .actions button { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: white; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .actions button.danger { color: var(--red); border-color: var(--red); }
+  .actions button.toggle { color: var(--accent-dark); border-color: var(--accent); }
+
+  .images-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .image-thumb { position: relative; width: 90px; height: 90px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .image-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .image-thumb .remove { position: absolute; top: 3px; right: 3px; background: rgba(20,18,31,0.75); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; line-height: 1; }
+
+  .upload-box { display: inline-flex; align-items: center; justify-content: center; width: 90px; height: 90px; border: 1.5px dashed var(--line); border-radius: 10px; cursor: pointer; font-size: 12px; color: var(--ink-soft); text-align: center; padding: 6px; }
+  .upload-box input { display: none; }
+
+  .error { color: var(--red); font-size: 14px; margin-top: 12px; }
+  .empty { color: var(--ink-soft); font-size: 14px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI Lead Machine — Panel Inmobiliaria</h1>
+  <p class="sub">Sube y administra las propiedades que el agente ofrece a los clientes.</p>
+
+  <div class="key-bar">
+    <input id="admin-key" type="password" placeholder="Clave de administración (ADMIN_KEY)">
+    <button onclick="loadProperties()">Ver</button>
+  </div>
+
+  <h2>Agregar propiedad</h2>
+  <div class="new-form">
+    <div><label>Título</label><input id="f-title" placeholder="Piso luminoso centro"></div>
+    <div><label>Ciudad</label><input id="f-city" placeholder="Madrid"></div>
+    <div>
+      <label>Operación</label>
+      <select id="f-operation"><option value="alquiler">Alquiler</option><option value="venta">Venta</option></select>
+    </div>
+    <div>
+      <label>Tipo</label>
+      <select id="f-type"><option value="vivienda">Vivienda</option><option value="habitacion">Habitación</option></select>
+    </div>
+    <div><label>Precio</label><input id="f-price" type="number" placeholder="850"></div>
+    <div><label>Habitaciones</label><input id="f-bedrooms" type="number" placeholder="2"></div>
+    <div><label>Baños</label><input id="f-bathrooms" type="number" placeholder="1"></div>
+    <div><label>Disponible</label><select id="f-available"><option value="true">Sí</option><option value="false">No</option></select></div>
+    <button onclick="createProperty()">Agregar propiedad</button>
+  </div>
+
+  <h2>Propiedades</h2>
+  <div id="properties-list"></div>
+</div>
+
+<script>
+  var API_URL = 'https://ai-lead-machine-backend.onrender.com';
+
+  function getKey() {
+    var key = document.getElementById('admin-key').value.trim();
+    if (key) localStorage.setItem('alm_admin_key', key);
+    return key;
+  }
+
+  window.addEventListener('DOMContentLoaded', function () {
+    var saved = localStorage.getItem('alm_admin_key');
+    if (saved) {
+      document.getElementById('admin-key').value = saved;
+      loadProperties();
+    }
+  });
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function loadProperties() {
+    var key = getKey();
+    var container = document.getElementById('properties-list');
+    container.innerHTML = 'Cargando...';
+
+    fetch(API_URL + '/admin/properties?key=' + encodeURIComponent(key))
+      .then(function (r) { if (!r.ok) throw new Error('clave inválida o error del servidor'); return r.json(); })
+      .then(renderProperties)
+      .catch(function (err) { container.innerHTML = '<p class="error">' + err.message + '</p>'; });
+  }
+
+  function renderProperties(properties) {
+    var container = document.getElementById('properties-list');
+
+    if (!properties.length) {
+      container.innerHTML = '<p class="empty">No hay propiedades todavía.</p>';
+      return;
+    }
+
+    container.innerHTML = properties.map(function (p) {
+      var imagesHtml = p.images.map(function (img) {
+        return '<div class="image-thumb"><img src="' + img.image_url + '">' +
+          '<button class="remove" onclick="deleteImage(' + img.id + ')">✕</button></div>';
+      }).join('');
+
+      return (
+        '<div class="property-card">' +
+        '<div class="property-head">' +
+        '<div><strong>' + escapeHtml(p.title) + '</strong>' +
+        '<div class="property-meta">' + escapeHtml(p.city) + ' · ' + escapeHtml(p.operation) + ' · ' +
+        escapeHtml(p.property_type) + ' · ' + p.price + '€' +
+        (p.bedrooms ? ' · ' + p.bedrooms + ' hab' : '') + (p.bathrooms ? ' · ' + p.bathrooms + ' baños' : '') +
+        ' <span class="badge ' + (p.available ? 'on' : 'off') + '">' + (p.available ? 'Disponible' : 'Oculta') + '</span>' +
+        '</div></div>' +
+        '<div class="actions">' +
+        '<button class="toggle" onclick="toggleAvailable(' + p.id + ', ' + (p.available ? 'false' : 'true') + ')">' +
+        (p.available ? 'Ocultar' : 'Publicar') + '</button>' +
+        '<button class="danger" onclick="deleteProperty(' + p.id + ')">Eliminar</button>' +
+        '</div></div>' +
+        '<div class="images-row">' + imagesHtml +
+        '<label class="upload-box">+ Foto<input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadImage(' + p.id + ', this)"></label>' +
+        '</div></div>'
+      );
+    }).join('');
+  }
+
+  function createProperty() {
+    var key = getKey();
+    var payload = {
+      title: document.getElementById('f-title').value,
+      city: document.getElementById('f-city').value,
+      operation: document.getElementById('f-operation').value,
+      property_type: document.getElementById('f-type').value,
+      price: parseFloat(document.getElementById('f-price').value) || 0,
+      bedrooms: document.getElementById('f-bedrooms').value ? parseInt(document.getElementById('f-bedrooms').value) : null,
+      bathrooms: document.getElementById('f-bathrooms').value ? parseInt(document.getElementById('f-bathrooms').value) : null,
+      available: document.getElementById('f-available').value === 'true',
+    };
+
+    if (!payload.title || !payload.city) { alert('Título y ciudad son obligatorios.'); return; }
+
+    fetch(API_URL + '/admin/properties?key=' + encodeURIComponent(key), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    })
+      .then(function (r) { if (!r.ok) throw new Error('no se pudo crear'); return r.json(); })
+      .then(function () {
+        document.getElementById('f-title').value = '';
+        document.getElementById('f-city').value = '';
+        document.getElementById('f-price').value = '';
+        document.getElementById('f-bedrooms').value = '';
+        document.getElementById('f-bathrooms').value = '';
+        loadProperties();
+      })
+      .catch(function () { alert('No se pudo crear la propiedad.'); });
+  }
+
+  function toggleAvailable(id, newValue) {
+    var key = getKey();
+    fetch(API_URL + '/admin/properties?key=' + encodeURIComponent(key))
+      .then(function (r) { return r.json(); })
+      .then(function (properties) {
+        var p = properties.find(function (x) { return x.id === id; });
+        if (!p) return;
+        return fetch(API_URL + '/admin/properties/' + id + '?key=' + encodeURIComponent(key), {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: p.title, city: p.city, operation: p.operation, property_type: p.property_type,
+            price: p.price, bedrooms: p.bedrooms, bathrooms: p.bathrooms, available: newValue,
+          }),
+        });
+      })
+      .then(function () { loadProperties(); })
+      .catch(function () { alert('No se pudo actualizar.'); });
+  }
+
+  function deleteProperty(id) {
+    if (!confirm('¿Eliminar esta propiedad y sus fotos?')) return;
+    var key = getKey();
+    fetch(API_URL + '/admin/properties/' + id + '?key=' + encodeURIComponent(key), { method: 'DELETE' })
+      .then(function () { loadProperties(); })
+      .catch(function () { alert('No se pudo eliminar.'); });
+  }
+
+  function deleteImage(imageId) {
+    var key = getKey();
+    fetch(API_URL + '/admin/properties/images/' + imageId + '?key=' + encodeURIComponent(key), { method: 'DELETE' })
+      .then(function () { loadProperties(); })
+      .catch(function () { alert('No se pudo eliminar la imagen.'); });
+  }
+
+  function uploadImage(propertyId, input) {
+    var file = input.files[0];
+    if (!file) return;
+    var key = getKey();
+
+    var formData = new FormData();
+    formData.append('file', file);
+
+    fetch(API_URL + '/admin/properties/' + propertyId + '/images?key=' + encodeURIComponent(key), {
+      method: 'POST', body: formData,
+    })
+      .then(function (r) { if (!r.ok) throw new Error('fallo'); return r.json(); })
+      .then(function () { loadProperties(); })
+      .catch(function () { alert('No se pudo subir la imagen (máx. 5MB, JPG/PNG/WEBP).'); });
+  }
+</script>
+</body>
+</html>
