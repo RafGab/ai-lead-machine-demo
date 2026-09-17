@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Lead Machine — Panel de Insights</title>
+<style>
+  :root {
+    --ink: #14121f; --ink-soft: #6b6478; --paper: #fbfaff; --surface: #f3f1fb;
+    --line: #e3e0f5; --accent: #4f3ff0; --accent-dark: #372ec9; --gold: #a3792f; --green: #12b3a3;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--surface); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; padding: 24px; }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; }
+
+  .key-bar { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+  .key-bar input { flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+  .key-bar button { padding: 10px 20px; border: none; border-radius: 8px; background: var(--accent); color: white; font-weight: 600; cursor: pointer; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 28px; }
+  @media (max-width: 520px) { .stats-row { grid-template-columns: 1fr; } }
+  .stat-card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .stat-card .n { font-size: 30px; font-weight: 800; color: var(--accent-dark); }
+  .stat-card .l { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-dark); margin: 32px 0 14px; }
+
+  .narrative-card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+  .narrative-card p { font-size: 15px; line-height: 1.7; margin: 0 0 10px; }
+  .narrative-card p:last-child { margin-bottom: 0; }
+  .narrative-card p::before { content: "📊 "; }
+
+  .suggestion-card { background: color-mix(in srgb, var(--green) 10%, var(--paper)); border: 1px solid color-mix(in srgb, var(--green) 30%, var(--line)); border-radius: 14px; padding: 18px 20px; margin-top: 12px; }
+  .suggestion-card p { font-size: 14.5px; line-height: 1.6; margin: 0; color: var(--ink); }
+  .suggestion-card p::before { content: "💡 "; }
+
+  .error { color: #ab263e; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI Lead Machine — Panel de Insights</h1>
+  <p class="sub">Un resumen en lenguaje simple de lo que está pasando con tus leads — sin gráficas que interpretar.</p>
+
+  <div class="key-bar">
+    <input id="admin-key" type="password" placeholder="Clave de administración (ADMIN_KEY)">
+    <button onclick="loadInsights()">Ver</button>
+  </div>
+
+  <div id="content"></div>
+</div>
+
+<script>
+  var API_URL = 'https://ai-lead-machine-backend.onrender.com';
+
+  function getKey() {
+    var key = document.getElementById('admin-key').value.trim();
+    if (key) localStorage.setItem('alm_admin_key', key);
+    return key;
+  }
+
+  window.addEventListener('DOMContentLoaded', function () {
+    var saved = localStorage.getItem('alm_admin_key');
+    if (saved) {
+      document.getElementById('admin-key').value = saved;
+      loadInsights();
+    }
+  });
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function loadInsights() {
+    var key = getKey();
+    var content = document.getElementById('content');
+    content.innerHTML = 'Cargando...';
+
+    fetch(API_URL + '/admin/insights?key=' + encodeURIComponent(key))
+      .then(function (r) { if (!r.ok) throw new Error('clave inválida o error del servidor'); return r.json(); })
+      .then(renderInsights)
+      .catch(function (err) { content.innerHTML = '<p class="error">' + err.message + '</p>'; });
+  }
+
+  function renderInsights(data) {
+    var content = document.getElementById('content');
+
+    var statsHtml =
+      '<div class="stats-row">' +
+      '<div class="stat-card"><div class="n">' + data.pageviews_month + '</div><div class="l">Visitas a la página este mes</div></div>' +
+      '<div class="stat-card"><div class="n">' + data.leads_month + '</div><div class="l">Conversaciones con datos este mes</div></div>' +
+      '</div>';
+
+    var narrativeHtml =
+      '<h2>Qué está pasando</h2>' +
+      '<div class="narrative-card">' +
+      data.narrative.map(function (line) { return '<p>' + escapeHtml(line) + '</p>'; }).join('') +
+      '</div>';
+
+    var suggestionsHtml =
+      '<h2>Sugerencias de acción</h2>' +
+      data.suggestions.map(function (s) { return '<div class="suggestion-card"><p>' + escapeHtml(s) + '</p></div>'; }).join('');
+
+    content.innerHTML = statsHtml + narrativeHtml + suggestionsHtml;
+  }
+</script>
+</body>
+</html>
