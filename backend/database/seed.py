@@ -184,41 +184,61 @@ properties = [
 ]
 
 
-connection = get_connection()
+def run_seed() -> None:
+    connection = get_connection()
 
-connection.execute("DELETE FROM property_images")
-connection.execute("DELETE FROM properties")
+    connection.execute("DELETE FROM property_images")
+    connection.execute("DELETE FROM properties")
 
-for property_data in properties:
-    cursor = connection.execute(
-        """
-        INSERT INTO properties
-        (title, operation, property_type, city, price, bedrooms, bathrooms)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            property_data["title"],
-            property_data["operation"],
-            property_data["property_type"],
-            property_data["city"],
-            property_data["price"],
-            property_data["bedrooms"],
-            property_data["bathrooms"],
-        ),
-    )
-
-    image_url = property_data.get("image")
-
-    if image_url:
-        connection.execute(
+    for property_data in properties:
+        cursor = connection.execute(
             """
-            INSERT INTO property_images (property_id, image_url)
-            VALUES (?, ?)
+            INSERT INTO properties
+            (title, operation, property_type, city, price, bedrooms, bathrooms)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (cursor.lastrowid, image_url),
+            (
+                property_data["title"],
+                property_data["operation"],
+                property_data["property_type"],
+                property_data["city"],
+                property_data["price"],
+                property_data["bedrooms"],
+                property_data["bathrooms"],
+            ),
         )
 
-connection.commit()
-connection.close()
+        image_url = property_data.get("image")
 
-print("Propiedades de prueba creadas correctamente.")
+        if image_url:
+            connection.execute(
+                """
+                INSERT INTO property_images (property_id, image_url)
+                VALUES (?, ?)
+                """,
+                (cursor.lastrowid, image_url),
+            )
+
+    connection.commit()
+    connection.close()
+
+    print("Propiedades de prueba creadas correctamente.")
+
+
+def seed_if_empty() -> None:
+    """
+    Siembra el catálogo de demo solo si la tabla está vacía, para no
+    borrar propiedades reales cargadas por un cliente desde el panel
+    de administración en cada reinicio del servidor.
+    """
+
+    connection = get_connection()
+    count = connection.execute("SELECT COUNT(*) AS n FROM properties").fetchone()["n"]
+    connection.close()
+
+    if count == 0:
+        run_seed()
+
+
+if __name__ == "__main__":
+    run_seed()

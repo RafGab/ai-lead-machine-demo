@@ -14,6 +14,7 @@ from backend.routes.admin_properties import router as admin_properties_router
 from backend.demo.routes import router as demo_router
 from backend.demo.repository import create_tables as create_demo_tables
 from backend.database.database import create_tables
+from backend.database.seed import seed_if_empty
 
 
 
@@ -23,6 +24,7 @@ app.mount("/properties", StaticFiles(directory="frontend/public/properties"), na
 
 create_tables()  # Create tables if they don't exist
 create_demo_tables()  # Tablas aisladas para la demo comercial multi-rubro
+seed_if_empty()  # Catálogo de ejemplo solo la primera vez (no pisa datos reales)
 
 app.add_middleware(
     CORSMiddleware,
