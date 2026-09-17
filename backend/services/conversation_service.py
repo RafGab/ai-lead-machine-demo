@@ -199,11 +199,12 @@ def process_message(
         new_data = {field: value}
     else:
         # Un fallo puntual de red/OpenAI no debería mostrarle un error al
-        # cliente si con un solo reintento se resuelve solo.
+        # cliente si con un par de reintentos se resuelve solo.
         last_error = None
         new_data = None
+        max_attempts = 3
 
-        for attempt in range(2):
+        for attempt in range(max_attempts):
             try:
                 ai_data = extract_lead_data(
                     message,
@@ -220,7 +221,7 @@ def process_message(
                 break
             except Exception as error:
                 last_error = error
-                if attempt == 0:
+                if attempt < max_attempts - 1:
                     time.sleep(1)
 
         if new_data is None:

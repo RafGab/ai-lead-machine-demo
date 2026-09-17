@@ -90,8 +90,9 @@ def process_demo_message(
     else:
         last_error = None
         new_data = None
+        max_attempts = 3
 
-        for attempt in range(2):
+        for attempt in range(max_attempts):
             try:
                 extracted = module.extract(message, conversation_history=conversation.get("messages", []))
                 new_data = extracted.model_dump()
@@ -105,7 +106,7 @@ def process_demo_message(
                 break
             except Exception as error:
                 last_error = error
-                if attempt == 0:
+                if attempt < max_attempts - 1:
                     time.sleep(1)
 
         if new_data is None:
