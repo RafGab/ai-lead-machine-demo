@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from backend.demo.ai_helper import call_ai
+from backend.demo.ai_helper import call_ai, option
 
 LABEL = "Gimnasio"
 ICON = "💪"
@@ -51,23 +51,53 @@ def extract(message: str, conversation_history: list[dict] | None = None) -> Mem
     return call_ai(SYSTEM_PROMPT, MembershipLead, message, conversation_history)
 
 
-def get_next_question(lead: MembershipLead) -> str | None:
+def get_next_question(lead: MembershipLead) -> dict | None:
     if not lead.name:
-        return "Para empezar, ¿cuál es tu nombre?"
+        return {"text": "Para empezar, ¿cuál es tu nombre?", "field": "name", "options": None}
     if not lead.goal:
-        return "¿Cuál es tu objetivo principal (perder peso, ganar masa muscular, salud general, rendimiento deportivo)?"
+        return {
+            "text": "¿Cuál es tu objetivo principal?",
+            "field": "goal",
+            "options": [
+                option("Perder peso", "perder peso"),
+                option("Ganar masa muscular", "ganar masa muscular"),
+                option("Salud general", "salud general"),
+                option("Rendimiento deportivo", "rendimiento deportivo"),
+            ],
+        }
     if not lead.membership_type:
-        return "¿Qué tipo de membresía te interesa: mensual, trimestral, anual o solo clases grupales?"
+        return {
+            "text": "¿Qué tipo de membresía te interesa?",
+            "field": "membership_type",
+            "options": [
+                option("Mensual", "mensual"),
+                option("Trimestral", "trimestral"),
+                option("Anual", "anual"),
+                option("Solo clases grupales", "solo clases grupales"),
+            ],
+        }
     if not lead.preferred_schedule:
-        return "¿Qué horario prefieres entrenar (mañana, tarde, noche)?"
+        return {
+            "text": "¿Qué horario prefieres entrenar?",
+            "field": "preferred_schedule",
+            "options": [option("Mañana", "mañana"), option("Tarde", "tarde"), option("Noche", "noche")],
+        }
     if lead.has_medical_condition is None:
-        return "¿Tienes alguna condición médica o lesión que debamos tener en cuenta?"
+        return {
+            "text": "¿Tienes alguna condición médica o lesión que debamos tener en cuenta?",
+            "field": "has_medical_condition",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if lead.wants_trial_class is None:
-        return "¿Te gustaría agendar una clase de prueba antes de inscribirte?"
+        return {
+            "text": "¿Te gustaría agendar una clase de prueba antes de inscribirte?",
+            "field": "wants_trial_class",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if not lead.preferred_date:
-        return "¿Qué día te vendría bien para tu visita?"
+        return {"text": "¿Qué día te vendría bien para tu visita?", "field": "preferred_date", "options": None}
     if not lead.phone:
-        return "Por último, ¿a qué teléfono te podemos confirmar?"
+        return {"text": "Por último, ¿a qué teléfono te podemos confirmar?", "field": "phone", "options": None}
     return None
 
 

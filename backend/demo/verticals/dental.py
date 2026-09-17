@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from backend.demo.ai_helper import call_ai
+from backend.demo.ai_helper import call_ai, option
 
 LABEL = "Clínica Dental"
 ICON = "🦷"
@@ -49,23 +49,45 @@ def extract(message: str, conversation_history: list[dict] | None = None) -> Pat
     return call_ai(SYSTEM_PROMPT, Patient, message, conversation_history)
 
 
-def get_next_question(patient: Patient) -> str | None:
+def get_next_question(patient: Patient) -> dict | None:
     if not patient.name:
-        return "Para empezar, ¿cuál es tu nombre?"
+        return {"text": "Para empezar, ¿cuál es tu nombre?", "field": "name", "options": None}
     if not patient.reason:
-        return "¿Cuál es el motivo de tu consulta?"
+        return {"text": "¿Cuál es el motivo de tu consulta?", "field": "reason", "options": None}
     if patient.is_urgent is None:
-        return "¿Es urgente? ¿Tienes dolor ahora mismo?"
+        return {
+            "text": "¿Es urgente? ¿Tienes dolor ahora mismo?",
+            "field": "is_urgent",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if not patient.specialty:
-        return "¿Qué tipo de consulta necesitas (general, ortodoncia, implantes, estética)?"
+        return {
+            "text": "¿Qué tipo de consulta necesitas?",
+            "field": "specialty",
+            "options": [
+                option("Odontología general", "odontología general"),
+                option("Ortodoncia", "ortodoncia"),
+                option("Implantes", "implantes"),
+                option("Estética dental", "estética dental"),
+                option("Endodoncia", "endodoncia"),
+            ],
+        }
     if patient.has_insurance is None:
-        return "¿Tienes seguro dental?"
+        return {
+            "text": "¿Tienes seguro dental?",
+            "field": "has_insurance",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if patient.has_insurance and not patient.insurance_provider:
-        return "¿Con qué compañía de seguro dental?"
+        return {"text": "¿Con qué compañía de seguro dental?", "field": "insurance_provider", "options": None}
     if not patient.preferred_date:
-        return "¿Qué día te vendría bien para la cita?"
+        return {"text": "¿Qué día te vendría bien para la cita?", "field": "preferred_date", "options": None}
     if not patient.phone:
-        return "Por último, ¿a qué teléfono te podemos confirmar la cita?"
+        return {
+            "text": "Por último, ¿a qué teléfono te podemos confirmar la cita?",
+            "field": "phone",
+            "options": None,
+        }
     return None
 
 

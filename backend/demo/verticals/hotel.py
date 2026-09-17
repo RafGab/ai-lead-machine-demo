@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from backend.demo.ai_helper import call_ai
+from backend.demo.ai_helper import call_ai, option
 
 LABEL = "Hotel"
 ICON = "🏨"
@@ -50,23 +50,48 @@ def extract(message: str, conversation_history: list[dict] | None = None) -> Res
     return call_ai(SYSTEM_PROMPT, Reservation, message, conversation_history)
 
 
-def get_next_question(reservation: Reservation) -> str | None:
+def get_next_question(reservation: Reservation) -> dict | None:
     if not reservation.name:
-        return "Para empezar, ¿cuál es tu nombre?"
+        return {"text": "Para empezar, ¿cuál es tu nombre?", "field": "name", "options": None}
     if not reservation.check_in_date:
-        return "¿Para qué fecha de entrada?"
+        return {"text": "¿Para qué fecha de entrada?", "field": "check_in_date", "options": None}
     if not reservation.check_out_date:
-        return "¿Y la fecha de salida?"
+        return {"text": "¿Y la fecha de salida?", "field": "check_out_date", "options": None}
     if reservation.guests is None:
-        return "¿Cuántas personas se van a hospedar?"
+        return {
+            "text": "¿Cuántas personas se van a hospedar?",
+            "field": "guests",
+            "options": [option("1", 1), option("2", 2), option("3", 3), option("4 o más", 4)],
+        }
     if not reservation.room_type:
-        return "¿Qué tipo de habitación prefieres: individual, doble, suite o familiar?"
+        return {
+            "text": "¿Qué tipo de habitación prefieres?",
+            "field": "room_type",
+            "options": [
+                option("Individual", "individual"),
+                option("Doble", "doble"),
+                option("Suite", "suite"),
+                option("Familiar", "familiar"),
+            ],
+        }
     if reservation.has_pets is None:
-        return "¿Viajas con alguna mascota?"
+        return {
+            "text": "¿Viajas con alguna mascota?",
+            "field": "has_pets",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if not reservation.special_request:
-        return "¿Alguna petición especial (cuna, vista, piso alto)? Si no, escribe 'ninguna'."
+        return {
+            "text": "¿Alguna petición especial (cuna, vista, piso alto)? Puedes escribirla o marcar que no tienes.",
+            "field": "special_request",
+            "options": [option("Ninguna", "ninguna")],
+        }
     if not reservation.phone:
-        return "Por último, ¿a qué teléfono te podemos confirmar la reserva?"
+        return {
+            "text": "Por último, ¿a qué teléfono te podemos confirmar la reserva?",
+            "field": "phone",
+            "options": None,
+        }
     return None
 
 

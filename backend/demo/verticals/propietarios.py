@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
-from backend.demo.ai_helper import call_ai
+from backend.demo.ai_helper import call_ai, option
+from backend.services.matching import get_available_cities
 
 LABEL = "Propietarios"
 ICON = "🔑"
@@ -59,25 +60,50 @@ def extract(message: str, conversation_history: list[dict] | None = None) -> Own
     return call_ai(SYSTEM_PROMPT, OwnerLead, message, conversation_history)
 
 
-def get_next_question(owner: OwnerLead) -> str | None:
+def get_next_question(owner: OwnerLead) -> dict | None:
     if not owner.name:
-        return "Para empezar, ¿cuál es tu nombre?"
+        return {"text": "Para empezar, ¿cuál es tu nombre?", "field": "name", "options": None}
     if not owner.city:
-        return "¿En qué ciudad está el piso?"
+        cities = get_available_cities()
+        return {
+            "text": "¿En qué ciudad está el piso?",
+            "field": "city",
+            "options": [option(c, c) for c in cities] if cities else None,
+        }
     if not owner.address:
-        return "¿En qué calle o zona se encuentra? (no hace falta el número exacto)"
+        return {
+            "text": "¿En qué calle o zona se encuentra? (no hace falta el número exacto)",
+            "field": "address",
+            "options": None,
+        }
     if owner.size_m2 is None:
-        return "¿Cuántos metros cuadrados tiene aproximadamente?"
+        return {"text": "¿Cuántos metros cuadrados tiene aproximadamente?", "field": "size_m2", "options": None}
     if owner.bedrooms is None:
-        return "¿Cuántas habitaciones tiene?"
+        return {
+            "text": "¿Cuántas habitaciones tiene?",
+            "field": "bedrooms",
+            "options": [option("1", 1), option("2", 2), option("3", 3), option("4 o más", 4)],
+        }
     if not owner.current_status:
-        return "¿El piso está actualmente alquilado, vacío o lo usas tú?"
+        return {
+            "text": "¿El piso está actualmente alquilado, vacío o lo usas tú?",
+            "field": "current_status",
+            "options": [option("Alquilado", "alquilado"), option("Vacío", "vacío"), option("Uso propio", "uso propio")],
+        }
     if owner.needs_renovation is None:
-        return "¿Consideras que necesita alguna reforma antes de alquilarlo?"
+        return {
+            "text": "¿Consideras que necesita alguna reforma antes de alquilarlo?",
+            "field": "needs_renovation",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if not owner.preferred_date:
-        return "¿Qué día te vendría bien para que te llame un gestor y valore el piso?"
+        return {
+            "text": "¿Qué día te vendría bien para que te llame un gestor y valore el piso?",
+            "field": "preferred_date",
+            "options": None,
+        }
     if not owner.phone:
-        return "Por último, ¿a qué teléfono te podemos llamar?"
+        return {"text": "Por último, ¿a qué teléfono te podemos llamar?", "field": "phone", "options": None}
     return None
 
 

@@ -140,11 +140,11 @@ def process_demo_message(
     next_question = module.get_next_question(lead_instance)
 
     if next_question:
-        assistant_message = next_question
+        assistant_message = next_question["text"]
         if nothing_understood:
             assistant_message = "No estoy seguro de haber entendido eso 🤔 " + assistant_message
-        options = None
-        options_field = None
+        options = next_question.get("options")
+        options_field = next_question.get("field")
         result = {"status": "needs_information", "question": next_question}
     else:
         priority_info = module.evaluate_priority(lead_instance)

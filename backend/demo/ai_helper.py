@@ -40,3 +40,8 @@ def call_ai(system_prompt: str, model_cls, message: str, conversation_history: l
     )
 
     return response.output_parsed
+
+
+def option(label: str, value) -> dict:
+    """Respuesta rápida de botón: {label, value}, igual que en inmobiliaria."""
+    return {"label": label, "value": value}

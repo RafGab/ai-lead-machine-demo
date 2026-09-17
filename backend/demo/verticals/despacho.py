@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from backend.demo.ai_helper import call_ai
+from backend.demo.ai_helper import call_ai, option
 
 LABEL = "Despacho de Abogados"
 ICON = "⚖️"
@@ -50,23 +50,46 @@ def extract(message: str, conversation_history: list[dict] | None = None) -> Cas
     return call_ai(SYSTEM_PROMPT, CaseIntake, message, conversation_history)
 
 
-def get_next_question(case: CaseIntake) -> str | None:
+def get_next_question(case: CaseIntake) -> dict | None:
     if not case.name:
-        return "Para empezar, ¿cuál es tu nombre?"
+        return {"text": "Para empezar, ¿cuál es tu nombre?", "field": "name", "options": None}
     if not case.area:
-        return "¿En qué área necesitas asesoría (laboral, civil, familia, mercantil, penal, extranjería)?"
+        return {
+            "text": "¿En qué área necesitas asesoría?",
+            "field": "area",
+            "options": [
+                option("Laboral", "laboral"),
+                option("Civil", "civil"),
+                option("Familia", "familia"),
+                option("Mercantil", "mercantil"),
+                option("Penal", "penal"),
+                option("Extranjería", "extranjería"),
+            ],
+        }
     if not case.case_summary:
-        return "Cuéntame brevemente de qué se trata tu caso."
+        return {"text": "Cuéntame brevemente de qué se trata tu caso.", "field": "case_summary", "options": None}
     if case.has_deadline is None:
-        return "¿Tienes algún plazo legal corriendo (una notificación, una demanda, una citación)?"
+        return {
+            "text": "¿Tienes algún plazo legal corriendo (una notificación, una demanda, una citación)?",
+            "field": "has_deadline",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if case.has_deadline and not case.deadline_date:
-        return "¿Para cuándo es ese plazo?"
+        return {"text": "¿Para cuándo es ese plazo?", "field": "deadline_date", "options": None}
     if case.opposing_party_exists is None:
-        return "¿Ya hay una contraparte identificada (persona, empresa o entidad)?"
+        return {
+            "text": "¿Ya hay una contraparte identificada (persona, empresa o entidad)?",
+            "field": "opposing_party_exists",
+            "options": [option("Sí", True), option("No", False)],
+        }
     if not case.preferred_date:
-        return "¿Qué día te vendría bien para la primera consulta?"
+        return {"text": "¿Qué día te vendría bien para la primera consulta?", "field": "preferred_date", "options": None}
     if not case.phone:
-        return "Por último, ¿a qué teléfono te podemos confirmar la cita?"
+        return {
+            "text": "Por último, ¿a qué teléfono te podemos confirmar la cita?",
+            "field": "phone",
+            "options": None,
+        }
     return None
 
 
