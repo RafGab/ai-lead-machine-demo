@@ -48,6 +48,23 @@ def process_demo_message(
 
     existing_data = conversation.get("lead_data", {})
 
+    if conversation.get("status") == "completed":
+        assistant_message = (
+            "Ya tengo todos tus datos registrados y en breve te contactamos. "
+            "Si quieres agregar algo más, cuéntamelo y lo anoto. 🙂"
+        )
+        repository.save_message(conversation_id, "assistant", assistant_message)
+
+        return {
+            "conversation_id": conversation_id,
+            "vertical": vertical,
+            "lead": existing_data,
+            "result": {"status": "completed"},
+            "assistant_message": assistant_message,
+            "options": None,
+            "options_field": None,
+        }
+
     if is_closing_message(message):
         assistant_message = (
             "¡Perfecto! Si quieres retomarlo más adelante, aquí estaré. "
@@ -120,6 +137,7 @@ def process_demo_message(
         options = None
         options_field = None
         result = {"status": "completed", "priority": priority_info.get("priority", "normal")}
+        repository.mark_completed(conversation_id)
 
     repository.save_message(conversation_id, "assistant", assistant_message)
 

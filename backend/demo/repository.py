@@ -1,6 +1,6 @@
 import json
 
-from backend.database.database import get_connection
+from backend.database.database import get_connection, _ensure_column
 
 
 def create_tables() -> None:
@@ -11,10 +11,14 @@ def create_tables() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             vertical TEXT NOT NULL,
             lead_data TEXT NOT NULL DEFAULT '{}',
+            status TEXT NOT NULL DEFAULT 'active',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    # Migración segura para bases de datos creadas antes de añadir "status".
+    _ensure_column(connection, "demo_conversations", "status", "TEXT NOT NULL DEFAULT 'active'")
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS demo_messages (
@@ -86,6 +90,7 @@ def get_conversation(conversation_id: int) -> dict | None:
         "id": conversation["id"],
         "vertical": conversation["vertical"],
         "lead_data": json.loads(conversation["lead_data"]),
+        "status": conversation["status"],
         "created_at": conversation["created_at"],
         "updated_at": conversation["updated_at"],
         "messages": [dict(message) for message in messages],
@@ -98,6 +103,18 @@ def update_lead_data(conversation_id: int, lead_data: dict) -> None:
     connection.execute(
         "UPDATE demo_conversations SET lead_data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         (json.dumps(lead_data, ensure_ascii=False), conversation_id),
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def mark_completed(conversation_id: int) -> None:
+    connection = get_connection()
+
+    connection.execute(
+        "UPDATE demo_conversations SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (conversation_id,),
     )
 
     connection.commit()
