@@ -37,6 +37,10 @@ SYSTEM_PROMPT = (
     "Para guests utiliza el número total de personas que se hospedarán.\n\n"
     "Si el cliente indica que NO viaja con mascota, has_pets debe ser "
     "False. Si indica que sí, debe ser True.\n\n"
+    "Para 'name': solo devuélvelo si el mensaje razonablemente parece un "
+    "nombre de persona. Si el texto no tiene sentido como nombre (frases "
+    "random, números sueltos, texto sin sentido), deja name como None — "
+    "no lo inventes ni aceptes cualquier cosa como si fuera un nombre.\n\n"
     "MUY IMPORTANTE: interpreta las respuestas cortas como 'sí' o 'no' "
     "teniendo en cuenta la pregunta inmediatamente anterior."
 )

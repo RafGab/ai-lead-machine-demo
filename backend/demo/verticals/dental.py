@@ -36,6 +36,10 @@ SYSTEM_PROMPT = (
     "Para specialty utiliza valores como:\n"
     "- odontología general\n- ortodoncia\n- implantes\n"
     "- estética dental\n- endodoncia\n\n"
+    "Para 'name': solo devuélvelo si el mensaje razonablemente parece un "
+    "nombre de persona. Si el texto no tiene sentido como nombre (frases "
+    "random, números sueltos, texto sin sentido), deja name como None — "
+    "no lo inventes ni aceptes cualquier cosa como si fuera un nombre.\n\n"
     "MUY IMPORTANTE: interpreta las respuestas cortas como 'sí' o 'no' "
     "teniendo en cuenta la pregunta inmediatamente anterior."
 )

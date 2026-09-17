@@ -191,6 +191,8 @@ def process_message(
     # 4. Extraer información del mensaje
     # ---------------------------------------------------------
 
+    nothing_understood = False
+
     if field:
         # Respuesta a un botón: el valor ya es correcto y viene
         # directo del catálogo, no hace falta la IA.
@@ -208,6 +210,13 @@ def process_message(
                     conversation_history=conversation.get("messages", [])
                 )
                 new_data = ai_data.model_dump()
+                # Solo cuenta como "no entendido" si ya había una
+                # pregunta previa que responder; el primer "hola" de la
+                # conversación no extrae nada y es completamente normal.
+                nothing_understood = (
+                    bool(conversation.get("messages"))
+                    and not any(v is not None for v in new_data.values())
+                )
                 break
             except Exception as error:
                 last_error = error
@@ -286,6 +295,16 @@ def process_message(
         assistant_message = result["question"]["text"]
         options = result["question"].get("options")
         options_field = result["question"].get("field")
+
+        if nothing_understood:
+            # No se extrajo nada del mensaje: probablemente algo
+            # incoherente o fuera de tema. En vez de romper el flujo o
+            # repetir la pregunta en silencio, lo reconocemos y
+            # retomamos justo donde íbamos.
+            assistant_message = (
+                "No estoy seguro de haber entendido eso 🤔 "
+                + assistant_message
+            )
 
     elif result.get("status") == "matches_found":
 

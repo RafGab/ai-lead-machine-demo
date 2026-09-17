@@ -38,6 +38,10 @@ SYSTEM_PROMPT = (
     "presente, devuelve None. No inventes nada.\n\n"
     "Para membership_type utiliza valores como:\n"
     "- mensual\n- trimestral\n- anual\n- solo clases grupales\n\n"
+    "Para 'name': solo devuélvelo si el mensaje razonablemente parece un "
+    "nombre de persona. Si el texto no tiene sentido como nombre (frases "
+    "random, números sueltos, texto sin sentido), deja name como None — "
+    "no lo inventes ni aceptes cualquier cosa como si fuera un nombre.\n\n"
     "MUY IMPORTANTE: interpreta las respuestas cortas como 'sí' o 'no' "
     "teniendo en cuenta la pregunta inmediatamente anterior."
 )

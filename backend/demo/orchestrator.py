@@ -1,4 +1,5 @@
 import logging
+import time
 
 from backend.demo import repository
 from backend.demo.verticals import GENERIC_VERTICALS
@@ -82,14 +83,36 @@ def process_demo_message(
             "options_field": None,
         }
 
+    nothing_understood = False
+
     if field:
         new_data = {field: value}
     else:
-        try:
-            extracted = module.extract(message, conversation_history=conversation.get("messages", []))
-            new_data = extracted.model_dump()
-        except Exception:
-            logger.exception("Fallo al extraer datos en demo (vertical=%s, conversation_id=%s)", vertical, conversation_id)
+        last_error = None
+        new_data = None
+
+        for attempt in range(2):
+            try:
+                extracted = module.extract(message, conversation_history=conversation.get("messages", []))
+                new_data = extracted.model_dump()
+                # Solo cuenta como "no entendido" si ya había una
+                # pregunta previa que responder; el primer "hola" de la
+                # conversación no extrae nada y es completamente normal.
+                nothing_understood = (
+                    bool(conversation.get("messages"))
+                    and not any(v is not None for v in new_data.values())
+                )
+                break
+            except Exception as error:
+                last_error = error
+                if attempt == 0:
+                    time.sleep(1)
+
+        if new_data is None:
+            logger.exception(
+                "Fallo al extraer datos en demo tras reintentar (vertical=%s, conversation_id=%s)",
+                vertical, conversation_id, exc_info=last_error,
+            )
 
             assistant_message = "Lo siento, ahora mismo no puedo procesar tu mensaje. Inténtalo de nuevo en unos segundos."
             repository.save_message(conversation_id, "assistant", assistant_message)
@@ -117,6 +140,8 @@ def process_demo_message(
 
     if next_question:
         assistant_message = next_question
+        if nothing_understood:
+            assistant_message = "No estoy seguro de haber entendido eso 🤔 " + assistant_message
         options = None
         options_field = None
         result = {"status": "needs_information", "question": next_question}
