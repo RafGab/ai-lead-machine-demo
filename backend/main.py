@@ -10,6 +10,8 @@ from backend.routes.visits import router as visits_router
 from backend.routes.webhooks import router as webhooks_router
 from backend.routes.study_leads import router as study_leads_router
 from backend.routes.reviews import router as reviews_router
+from backend.demo.routes import router as demo_router
+from backend.demo.repository import create_tables as create_demo_tables
 from backend.database.database import create_tables
 
 
@@ -19,6 +21,7 @@ app = FastAPI()
 app.mount("/properties", StaticFiles(directory="frontend/public/properties"), name="properties")
 
 create_tables()  # Create tables if they don't exist
+create_demo_tables()  # Tablas aisladas para la demo comercial multi-rubro
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,3 +57,4 @@ app.include_router(visits_router)
 app.include_router(webhooks_router)
 app.include_router(study_leads_router)
 app.include_router(reviews_router)
+app.include_router(demo_router)

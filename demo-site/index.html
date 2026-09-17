@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Lead Machine — Chatbot de captación de leads</title>
+<meta name="description" content="El mismo motor de IA que califica y agenda leads automáticamente, adaptado a tu negocio en días. Pruébalo en vivo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14121f;
+    --ink-soft: #6b6478;
+    --paper: #fbfaff;
+    --surface: #f3f1fb;
+    --line: #e3e0f5;
+    --accent: #4f3ff0;
+    --accent-dark: #372ec9;
+    --accent-100: #ece9fd;
+    --teal: #12b3a3;
+    --teal-dark: #0d8c7f;
+    --shadow: 0 24px 48px -24px rgba(20, 18, 31, 0.22);
+    --shadow-sm: 0 10px 24px -16px rgba(20, 18, 31, 0.22);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1140px; margin: 0 auto; padding-inline: 24px; }
+  h1, h2, h3, .display { font-family: "Sora", system-ui, sans-serif; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; margin: 0; color: var(--ink); }
+  p { margin: 0; }
+  a { color: inherit; }
+
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent-dark); }
+  .eyebrow::before { content: ""; width: 22px; height: 1px; background: currentColor; }
+
+  .nav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; padding-block: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: "Sora", sans-serif; font-weight: 700; font-size: 18px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--teal)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 13px 26px; font-size: 14px; font-weight: 700; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: white; box-shadow: var(--shadow-sm); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow); background: var(--accent-dark); }
+  .btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent-dark); }
+
+  .hero { padding-block: 60px 40px; }
+  .hero-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  .hero h1 { font-size: clamp(32px, 4.6vw, 50px); line-height: 1.08; }
+  .hero-sub { margin-top: 18px; max-width: 62ch; font-size: 17.5px; color: var(--ink-soft); }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
+
+  .proof-row { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .proof strong { display: block; font-family: "Sora", sans-serif; font-size: 15px; font-weight: 700; }
+  .proof span { display: block; font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+
+  section { padding-block: 56px; }
+  .band { background: var(--surface); border-block: 1px solid var(--line); }
+  .section-head { max-width: 62ch; }
+  .section-head h2 { font-size: clamp(24px, 3vw, 32px); margin-top: 10px; }
+  .section-head p { margin-top: 14px; color: var(--ink-soft); font-size: 15.5px; }
+
+  /* ---------- DEMO ---------- */
+  .demo-wrap { margin-top: 36px; display: grid; grid-template-columns: 1fr; gap: 20px; }
+  @media (min-width: 940px) { .demo-wrap { grid-template-columns: 300px 1fr; } }
+
+  .vertical-list { display: flex; flex-direction: column; gap: 8px; }
+  @media (min-width: 940px) { .vertical-list { display: flex; } }
+  @media (max-width: 939px) { .vertical-list { flex-direction: row; flex-wrap: wrap; } }
+
+  .vertical-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 16px; border-radius: 12px; border: 1.5px solid var(--line);
+    background: var(--paper); cursor: pointer; text-align: left;
+    font-family: inherit; font-size: 14.5px; font-weight: 600; color: var(--ink);
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  }
+  .vertical-btn:hover { transform: translateY(-1px); }
+  .vertical-btn .icon { font-size: 20px; }
+  .vertical-btn[data-active="true"] { border-color: var(--vc, var(--accent)); background: color-mix(in srgb, var(--vc, var(--accent)) 10%, var(--paper)); }
+
+  .chat-panel {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--shadow); display: flex; flex-direction: column; height: 560px; overflow: hidden;
+  }
+  .chat-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .chat-header .avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 19px; background: var(--vc, var(--accent)); color: white; flex-shrink: 0; }
+  .chat-header strong { display: block; font-size: 14.5px; }
+  .chat-header span { display: block; font-size: 12.5px; color: var(--ink-soft); }
+
+  .chat-body { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .bubble { max-width: 82%; padding: 11px 15px; border-radius: 14px; font-size: 14.5px; line-height: 1.5; white-space: pre-wrap; }
+  .bubble.assistant { background: var(--surface); border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .bubble.user { background: var(--vc, var(--accent)); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .bubble.typing { color: var(--ink-soft); font-style: italic; }
+
+  .options-row { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; max-width: 82%; }
+  .option-btn { padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--vc, var(--accent)); color: var(--vc, var(--accent)); background: var(--paper); font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .option-btn:hover { background: color-mix(in srgb, var(--vc, var(--accent)) 12%, var(--paper)); }
+
+  .chat-input-row { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); background: var(--paper); }
+  .chat-input-row input { flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 14.5px; font-family: inherit; outline: none; background: var(--surface); }
+  .chat-input-row input:focus { border-color: var(--vc, var(--accent)); }
+  .chat-input-row button { padding: 12px 20px; border-radius: 10px; border: none; background: var(--vc, var(--accent)); color: white; font-weight: 700; font-family: inherit; cursor: pointer; }
+  .chat-input-row button:disabled { opacity: 0.5; cursor: default; }
+
+  /* ---------- FEATURES ---------- */
+  .features-grid { margin-top: 40px; display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  @media (min-width: 640px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 980px) { .features-grid { grid-template-columns: repeat(4, 1fr); } }
+  .feature { background: var(--paper); padding: 26px 22px; display: flex; flex-direction: column; gap: 10px; }
+  .feature .fi { font-size: 24px; }
+  .feature h3 { font-size: 15.5px; font-weight: 700; }
+  .feature p { font-size: 13.5px; color: var(--ink-soft); }
+
+  /* ---------- VERTICALS SHOWCASE ---------- */
+  .showcase-grid { margin-top: 36px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 720px) { .showcase-grid { grid-template-columns: repeat(3, 1fr); } }
+  .showcase-card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .showcase-card .si { font-size: 26px; }
+  .showcase-card h3 { font-size: 15.5px; margin-top: 10px; }
+  .showcase-card p { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px; }
+
+  footer { border-top: 1px solid var(--line); padding-block: 40px; }
+  .footer-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px; }
+  footer .fine { font-size: 12.5px; color: var(--ink-soft); margin-top: 20px; }
+
+  .reveal { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal[data-hidden="true"] { opacity: 0; transform: translateY(14px); }
+    .reveal { transition: opacity 0.6s ease, transform 0.6s ease; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="wrap nav-row">
+    <div class="brand">
+      <span class="brand-mark">🤖</span>
+      AI Lead Machine
+    </div>
+    <a href="#demo" class="btn btn-primary">Probar la demo</a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Chatbot de captación y calificación de leads</span>
+      <h1>El mismo motor de IA, adaptado a tu negocio en días — no en meses.</h1>
+      <p class="hero-sub">Un asistente que conversa con tus clientes, hace las preguntas correctas, filtra según tus reglas de negocio y agenda la cita directamente en tu calendario. Elige un rubro abajo y pruébalo en vivo, ahora mismo.</p>
+      <div class="hero-actions">
+        <a href="#demo" class="btn btn-primary">Ver demo en vivo</a>
+        <a href="#como-funciona" class="btn btn-ghost">Cómo funciona</a>
+      </div>
+      <div class="proof-row">
+        <div class="proof"><strong>5 rubros</strong><span>ya probados en esta misma demo</span></div>
+        <div class="proof"><strong>Calendario integrado</strong><span>agenda citas sin choques de horario</span></div>
+        <div class="proof"><strong>Días, no meses</strong><span>para adaptarlo a tu flujo de trabajo</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="demo">
+  <div class="wrap">
+    <div class="section-head reveal" data-hidden="true">
+      <span class="eyebrow">Pruébalo tú mismo</span>
+      <h2>Elige un rubro y conversa con el agente</h2>
+      <p>Es exactamente la misma conversación que tendría uno de tus clientes — el agente pregunta, filtra y agenda, sin guion fijo.</p>
+    </div>
+
+    <div class="demo-wrap">
+      <div class="vertical-list" id="vertical-list"></div>
+
+      <div class="chat-panel">
+        <div class="chat-header">
+          <div class="avatar" id="chat-avatar">🏠</div>
+          <div>
+            <strong id="chat-title">Cargando...</strong>
+            <span id="chat-subtitle">Demo en vivo</span>
+          </div>
+        </div>
+        <div class="chat-body" id="chat-body"></div>
+        <div class="chat-input-row">
+          <input id="chat-input" type="text" placeholder="Escribe tu mensaje..." autocomplete="off">
+          <button id="chat-send">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="como-funciona" class="band">
+  <div class="wrap">
+    <div class="section-head reveal" data-hidden="true">
+      <span class="eyebrow">Cómo funciona</span>
+      <h2>Cuatro piezas, un solo motor</h2>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature reveal" data-hidden="true">
+        <div class="fi">💬</div>
+        <h3>Conversación híbrida</h3>
+        <p>Botones de respuesta rápida para preguntas cerradas, texto libre para lo demás — nunca se malinterpreta un dato de catálogo.</p>
+      </div>
+      <div class="feature reveal" data-hidden="true">
+        <div class="fi">🧠</div>
+        <h3>Reglas de tu negocio</h3>
+        <p>Filtra, prioriza y decide igual que lo haría tu equipo — las reglas se definen contigo, no son genéricas.</p>
+      </div>
+      <div class="feature reveal" data-hidden="true">
+        <div class="fi">📅</div>
+        <h3>Agenda en tu calendario</h3>
+        <p>Consulta disponibilidad real en Google Calendar y propone alternativas si el horario está ocupado.</p>
+      </div>
+      <div class="feature reveal" data-hidden="true">
+        <div class="fi">🔌</div>
+        <h3>Se integra donde ya estás</h3>
+        <p>Widget embebible para tu web, o conectado a tus formularios de Facebook/Instagram Lead Ads.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head reveal" data-hidden="true">
+      <span class="eyebrow">Un motor, múltiples rubros</span>
+      <h2>No es un chatbot genérico — es tu proceso, automatizado</h2>
+      <p>Cada rubro tiene su propio flujo de preguntas y sus propias reglas de negocio. Esto es lo que ya construimos:</p>
+    </div>
+
+    <div class="showcase-grid">
+      <div class="showcase-card reveal" data-hidden="true">
+        <div class="si">🏠</div>
+        <h3>Inmobiliarias</h3>
+        <p>Filtra por operación, presupuesto, mascotas y menores; solo agenda visitas con leads que sí califican.</p>
+      </div>
+      <div class="showcase-card reveal" data-hidden="true">
+        <div class="si">🦷</div>
+        <h3>Clínicas dentales</h3>
+        <p>Detecta urgencias y les da prioridad en la agenda, sin dar nunca consejo médico.</p>
+      </div>
+      <div class="showcase-card reveal" data-hidden="true">
+        <div class="si">⚖️</div>
+        <h3>Despachos de abogados</h3>
+        <p>Identifica plazos legales urgentes y prepara al abogado antes de la primera consulta.</p>
+      </div>
+      <div class="showcase-card reveal" data-hidden="true">
+        <div class="si">🏨</div>
+        <h3>Hoteles</h3>
+        <p>Recoge fechas, huéspedes y necesidades especiales — listo para confirmar disponibilidad real.</p>
+      </div>
+      <div class="showcase-card reveal" data-hidden="true">
+        <div class="si">💪</div>
+        <h3>Gimnasios</h3>
+        <p>Convierte interesados en clases de prueba agendadas, detectando condiciones médicas a revisar.</p>
+      </div>
+      <div class="showcase-card reveal" data-hidden="true" style="display:flex; flex-direction:column; justify-content:center; align-items:flex-start; background: var(--accent-100); border-color: transparent;">
+        <div class="si">✨</div>
+        <h3>¿Tu rubro no está aquí?</h3>
+        <p>El motor se adapta a cualquier negocio con un proceso de intake y agenda. Hablemos de tu caso.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-row">
+      <div class="brand">
+        <span class="brand-mark">🤖</span>
+        AI Lead Machine
+      </div>
+      <a href="#demo" class="btn btn-primary">Quiero probarlo en mi negocio</a>
+    </div>
+    <p class="fine">Demo comercial — los datos ingresados aquí son de prueba y no se usan con fines reales.</p>
+  </div>
+</footer>
+
+<script>
+  var API_URL = 'https://ai-lead-machine-backend.onrender.com';
+
+  var state = {
+    verticals: [],
+    current: null,
+    conversationId: null,
+    sending: false,
+  };
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function loadVerticals() {
+    fetch(API_URL + '/demo/verticals')
+      .then(function (r) { return r.json(); })
+      .then(function (verticals) {
+        state.verticals = verticals;
+        renderVerticalList();
+        selectVertical(verticals[0].key);
+      })
+      .catch(function () {
+        document.getElementById('chat-title').textContent = 'No se pudo conectar con el servidor de demo.';
+      });
+  }
+
+  function renderVerticalList() {
+    var container = document.getElementById('vertical-list');
+    container.innerHTML = state.verticals.map(function (v) {
+      return (
+        '<button class="vertical-btn" style="--vc:' + v.color + '" data-key="' + v.key + '" onclick="selectVertical(\'' + v.key + '\')">' +
+        '<span class="icon">' + v.icon + '</span>' + escapeHtml(v.label) +
+        '</button>'
+      );
+    }).join('');
+  }
+
+  function selectVertical(key) {
+    var v = state.verticals.find(function (x) { return x.key === key; });
+    if (!v) return;
+
+    state.current = v;
+    state.conversationId = null;
+
+    document.querySelectorAll('.vertical-btn').forEach(function (btn) {
+      btn.setAttribute('data-active', btn.getAttribute('data-key') === key ? 'true' : 'false');
+    });
+
+    document.getElementById('chat-avatar').textContent = v.icon;
+    document.getElementById('chat-avatar').style.setProperty('--vc', v.color);
+    document.getElementById('chat-title').textContent = v.label;
+    document.getElementById('chat-panel-color-target');
+    document.querySelector('.chat-panel').style.setProperty('--vc', v.color);
+
+    var body = document.getElementById('chat-body');
+    body.innerHTML = '';
+    appendBubble('assistant', v.welcome);
+  }
+
+  function appendBubble(role, text) {
+    var body = document.getElementById('chat-body');
+    var el = document.createElement('div');
+    el.className = 'bubble ' + role;
+    el.textContent = text;
+    body.appendChild(el);
+    body.scrollTop = body.scrollHeight;
+    return el;
+  }
+
+  function appendOptions(options, field) {
+    var body = document.getElementById('chat-body');
+    var row = document.createElement('div');
+    row.className = 'options-row';
+    options.forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = opt.label;
+      btn.onclick = function () {
+        row.remove();
+        appendBubble('user', opt.label);
+        sendToServer(opt.label, field, opt.value);
+      };
+      row.appendChild(btn);
+    });
+    body.appendChild(row);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function sendMessage() {
+    var input = document.getElementById('chat-input');
+    var text = input.value.trim();
+    if (!text || state.sending) return;
+    input.value = '';
+    appendBubble('user', text);
+    sendToServer(text, null, null);
+  }
+
+  function sendToServer(message, field, value) {
+    state.sending = true;
+    document.getElementById('chat-send').disabled = true;
+
+    var typing = appendBubble('assistant typing', 'Escribiendo...');
+
+    fetch(API_URL + '/demo/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vertical: state.current.key,
+        message: message,
+        conversation_id: state.conversationId,
+        field: field,
+        value: value,
+      }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        typing.remove();
+        state.conversationId = data.conversation_id;
+        if (data.assistant_message) appendBubble('assistant', data.assistant_message);
+        if (data.options && data.options.length) appendOptions(data.options, data.options_field);
+      })
+      .catch(function () {
+        typing.remove();
+        appendBubble('assistant', 'Lo siento, no pude conectar con el servidor. Inténtalo de nuevo.');
+      })
+      .finally(function () {
+        state.sending = false;
+        document.getElementById('chat-send').disabled = false;
+      });
+  }
+
+  document.getElementById('chat-send').addEventListener('click', sendMessage);
+  document.getElementById('chat-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  loadVerticals();
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.setAttribute('data-hidden', 'false');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function (el) { el.setAttribute('data-hidden', 'false'); });
+  }
+</script>
+
+</body>
+</html>
