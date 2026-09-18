@@ -12,6 +12,7 @@ from backend.routes.study_leads import router as study_leads_router
 from backend.routes.reviews import router as reviews_router
 from backend.routes.admin_properties import router as admin_properties_router
 from backend.routes.analytics import router as analytics_router
+from backend.routes.business_leads import router as business_leads_router
 from backend.demo.routes import router as demo_router
 from backend.demo.repository import create_tables as create_demo_tables
 from backend.database.database import create_tables
@@ -71,4 +72,5 @@ app.include_router(study_leads_router)
 app.include_router(reviews_router)
 app.include_router(admin_properties_router)
 app.include_router(analytics_router)
+app.include_router(business_leads_router)
 app.include_router(demo_router)

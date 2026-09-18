@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Lead Machine — Llévalo a tu negocio</title>
+<meta name="description" content="El mismo agente de IA que ya usamos en nuestro propio negocio, adaptado al tuyo en días. Atiende, califica y agenda citas solo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14121f;
+    --ink-soft: #6b6478;
+    --paper: #fbfaff;
+    --surface: #f3f1fb;
+    --line: #e3e0f5;
+    --accent: #4f3ff0;
+    --accent-dark: #372ec9;
+    --accent-100: #ece9fd;
+    --teal: #12b3a3;
+    --teal-dark: #0d8c7f;
+    --gold: #a3792f;
+    --shadow: 0 24px 48px -24px rgba(20, 18, 31, 0.22);
+    --shadow-sm: 0 10px 24px -16px rgba(20, 18, 31, 0.22);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 24px; }
+  h1, h2, h3, .display { font-family: "Sora", system-ui, sans-serif; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; margin: 0; color: var(--ink); }
+  p { margin: 0; }
+  a { color: inherit; }
+  section { padding-block: 72px; }
+
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent-dark); }
+  .eyebrow::before { content: ""; width: 22px; height: 1px; background: currentColor; }
+
+  .nav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; padding-block: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: "Sora", sans-serif; font-weight: 700; font-size: 17px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--teal)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .nav a.back { font-size: 13.5px; font-weight: 600; color: var(--ink-soft); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 13px 26px; font-size: 14px; font-weight: 700; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: white; box-shadow: var(--shadow-sm); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow); background: var(--accent-dark); }
+  .btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent-dark); }
+
+  .hero { padding-top: 64px; padding-bottom: 56px; }
+  .hero .eyebrow { margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(32px, 5vw, 50px); line-height: 1.08; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero-sub { margin-top: 20px; max-width: 62ch; font-size: 17.5px; color: var(--ink-soft); }
+  .hero-actions { margin-top: 30px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .trust-line { margin-top: 28px; display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; color: var(--ink-soft); }
+  .trust-line a { color: var(--accent-dark); text-decoration: underline; }
+
+  .band { background: var(--surface); border-block: 1px solid var(--line); }
+
+  .pain-grid { margin-top: 40px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 720px) { .pain-grid { grid-template-columns: repeat(3, 1fr); } }
+  .pain-card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .pain-card .n { font-family: "Sora", sans-serif; font-weight: 800; font-size: 26px; color: var(--accent); }
+  .pain-card h3 { font-size: 16px; margin-top: 10px; }
+  .pain-card p { font-size: 14px; color: var(--ink-soft); margin-top: 8px; }
+
+  .how-grid { margin-top: 40px; display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  @media (min-width: 640px) { .how-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 980px) { .how-grid { grid-template-columns: repeat(4, 1fr); } }
+  .how-card { background: var(--paper); padding: 26px 22px; }
+  .how-card .si { font-size: 24px; }
+  .how-card h3 { font-size: 14.5px; margin-top: 12px; }
+  .how-card p { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+
+  .verticals-row { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .vertical-chip { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 13.5px; font-weight: 600; }
+
+  .case-card { margin-top: 40px; background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: 36px; display: grid; grid-template-columns: 1fr; gap: 24px; }
+  @media (min-width: 780px) { .case-card { grid-template-columns: 1.1fr 0.9fr; align-items: center; } }
+  .case-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; background: var(--accent-100); color: var(--accent-dark); font-size: 12px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 14px; }
+  .case-card h3 { font-size: 24px; }
+  .case-card p { margin-top: 14px; color: var(--ink-soft); font-size: 15px; }
+  .case-list { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .case-list li { list-style: none; display: flex; gap: 10px; font-size: 14px; }
+  .case-list li::before { content: "✓"; color: var(--teal-dark); font-weight: 800; flex-shrink: 0; }
+  .case-visual { background: linear-gradient(160deg, var(--accent-100), var(--paper)); border: 1px solid var(--line); border-radius: 18px; padding: 26px; text-align: center; }
+  .case-visual .logo-crop { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow); }
+  .case-visual p { margin-top: 16px; font-size: 13px; color: var(--ink-soft); }
+  .case-visual a { font-weight: 700; color: var(--accent-dark); }
+
+  .steps { margin-top: 40px; display: grid; grid-template-columns: 1fr; gap: 28px; }
+  @media (min-width: 720px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .step-num { font-family: "Sora", sans-serif; font-weight: 800; font-size: 30px; color: var(--accent-100); -webkit-text-stroke: 1.5px var(--accent); }
+  .step h3 { font-size: 16px; margin-top: 6px; }
+  .step p { font-size: 14px; color: var(--ink-soft); margin-top: 6px; }
+
+  .form-card { margin-top: 40px; background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: 32px; box-shadow: var(--shadow-sm); }
+  .field-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 20px; }
+  @media (min-width: 640px) { .field-grid { grid-template-columns: 1fr 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+  .field input, .field select, .field textarea { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14.5px; font-family: inherit; outline: none; background: var(--surface); color: var(--ink); }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .form-submit { margin-top: 22px; width: 100%; }
+  .form-status { margin-top: 14px; font-size: 13.5px; }
+  .form-status.ok { color: var(--teal-dark); }
+  .form-status.err { color: #c0392b; }
+
+  footer { padding-block: 36px; border-top: 1px solid var(--line); }
+  .footer-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+  .fine { font-size: 12.5px; color: var(--ink-soft); }
+
+  .reveal { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal[data-hidden="true"] { opacity: 0; transform: translateY(14px); }
+    .reveal { transition: opacity 0.6s ease, transform 0.6s ease; }
+  }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="wrap nav-row">
+    <div class="brand"><span class="brand-mark">🤖</span> AI Lead Machine</div>
+    <a class="back" href="index.html">← Ver la demo en vivo</a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Para negocios que quieren más leads, menos trabajo manual</span>
+    <h1 class="reveal" data-hidden="true">Un agente de IA que atiende, <em>califica y agenda</em> por ti — en días, no en meses.</h1>
+    <p class="hero-sub reveal" data-hidden="true">Tus clientes escriben a cualquier hora. El agente pregunta lo que tu equipo preguntaría, filtra según tus reglas de negocio, y agenda la cita directamente en tu calendario — sin que nadie tenga que estar pendiente del chat.</p>
+    <div class="hero-actions reveal" data-hidden="true">
+      <a href="#form" class="btn btn-primary">Quiero implementarlo en mi negocio</a>
+      <a href="index.html" class="btn btn-ghost">Probar la demo primero</a>
+    </div>
+    <div class="trust-line reveal" data-hidden="true">
+      🔴 No es solo una demo — <a href="https://go2spain-site.onrender.com" target="_blank" rel="noopener">míralo en vivo en Acero Pulido</a>, un negocio real que ya lo usa.
+    </div>
+  </div>
+</header>
+
+<section class="band">
+  <div class="wrap">
+    <span class="eyebrow">El problema que resuelve</span>
+    <h2 style="margin-top:14px; font-size: clamp(24px, 3vw, 32px);">Cada minuto sin responder es un cliente que se va con otro</h2>
+    <div class="pain-grid">
+      <div class="pain-card reveal" data-hidden="true">
+        <div class="n">⏱</div>
+        <h3>El primero en responder suele ganar el cliente</h3>
+        <p>Si alguien escribe fuera de horario o cuando tu equipo está ocupado, casi siempre prueba con el siguiente negocio de la lista.</p>
+      </div>
+      <div class="pain-card reveal" data-hidden="true">
+        <div class="n">↻</div>
+        <h3>Las mismas preguntas, una y otra vez</h3>
+        <p>Precio, horarios, disponibilidad — tu equipo repite las mismas respuestas en vez de atender a quien ya está listo para decidir.</p>
+      </div>
+      <div class="pain-card reveal" data-hidden="true">
+        <div class="n">📅</div>
+        <h3>Citas que se agendan mal o se olvidan</h3>
+        <p>Coordinar por WhatsApp fecha y hora, comprobar disponibilidad y confirmar a mano es lento y se presta a errores.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="como-funciona">
+  <div class="wrap">
+    <span class="eyebrow">Cómo funciona</span>
+    <h2 style="margin-top:14px; font-size: clamp(24px, 3vw, 32px);">Cuatro piezas, un solo motor</h2>
+    <div class="how-grid">
+      <div class="how-card reveal" data-hidden="true">
+        <div class="si">💬</div>
+        <h3>Conversación híbrida</h3>
+        <p>Botones para preguntas cerradas, texto libre para lo demás — nunca se malinterpreta un dato de catálogo.</p>
+      </div>
+      <div class="how-card reveal" data-hidden="true">
+        <div class="si">🧠</div>
+        <h3>Reglas de tu negocio</h3>
+        <p>Filtra, prioriza y decide igual que lo haría tu equipo — las reglas se definen contigo, no son genéricas.</p>
+      </div>
+      <div class="how-card reveal" data-hidden="true">
+        <div class="si">📅</div>
+        <h3>Agenda en tu calendario</h3>
+        <p>Consulta disponibilidad real en Google Calendar y ofrece alternativas si el horario está ocupado.</p>
+      </div>
+      <div class="how-card reveal" data-hidden="true">
+        <div class="si">🔌</div>
+        <h3>Se integra donde ya estás</h3>
+        <p>Un widget embebible para tu web — se pega con una línea de código, sin rehacer nada de lo que ya tienes.</p>
+      </div>
+    </div>
+
+    <span class="eyebrow" style="margin-top:48px; display:block;">Ya construido, listo para adaptar</span>
+    <div class="verticals-row">
+      <span class="vertical-chip">🏠 Inmobiliarias</span>
+      <span class="vertical-chip">🦷 Clínicas dentales</span>
+      <span class="vertical-chip">⚖️ Despachos de abogados</span>
+      <span class="vertical-chip">🏨 Hoteles</span>
+      <span class="vertical-chip">💪 Gimnasios</span>
+      <span class="vertical-chip">✈️ Asesorías de extranjería</span>
+      <span class="vertical-chip">✨ ¿Tu rubro no está? Lo adaptamos</span>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="caso-real">
+  <div class="wrap">
+    <div class="case-card">
+      <div>
+        <span class="case-badge">Caso real, no un mockup</span>
+        <h3>Acero Pulido usa este mismo motor, hoy</h3>
+        <p>No te pedimos que confíes en una demo genérica. Acero Pulido es una asesoría de extranjería real, y su asistente <strong>Gari</strong> corre con exactamente el mismo motor que verías en tu negocio.</p>
+        <ul class="case-list">
+          <li>Atiende en la web real, no en un entorno aislado de pruebas</li>
+          <li>Agenda citas de verdad en Google Calendar, respetando el horario de atención</li>
+          <li>Sus métricas (visitas, conversaciones, trámites más pedidos) se ven separadas de cualquier prueba, en un panel propio</li>
+        </ul>
+      </div>
+      <div class="case-visual">
+        <div style="font-size:48px;">✈️</div>
+        <p>Visítalo y pruébalo tú mismo:<br><a href="https://go2spain-site.onrender.com" target="_blank" rel="noopener">go2spain-site.onrender.com</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Cómo empezar</span>
+    <h2 style="margin-top:14px; font-size: clamp(24px, 3vw, 32px);">De la conversación a tenerlo funcionando</h2>
+    <div class="steps">
+      <div class="step reveal" data-hidden="true">
+        <div class="step-num">01</div>
+        <h3>Cuéntanos tu negocio</h3>
+        <p>Qué preguntas hace tu equipo hoy, qué información necesitas de un cliente, y cómo agendas ahora mismo.</p>
+      </div>
+      <div class="step reveal" data-hidden="true">
+        <div class="step-num">02</div>
+        <h3>Lo configuramos en días</h3>
+        <p>Adaptamos el flujo de preguntas, el tono y los colores a tu marca — como hicimos con Acero Pulido.</p>
+      </div>
+      <div class="step reveal" data-hidden="true">
+        <div class="step-num">03</div>
+        <h3>Lo probamos juntos</h3>
+        <p>Antes de publicarlo en tu web real, lo revisas y ajustamos lo que haga falta.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="form">
+  <div class="wrap">
+    <span class="eyebrow">Hablemos de tu negocio</span>
+    <h2 style="margin-top:14px; font-size: clamp(24px, 3vw, 32px);">Quiero implementarlo</h2>
+    <p style="margin-top:12px; color:var(--ink-soft); max-width:56ch;">Cuéntanos un poco sobre tu negocio y te contactamos para mostrarte cómo quedaría adaptado — sin compromiso.</p>
+
+    <div class="form-card">
+      <form id="lead-form">
+        <div class="field-grid">
+          <div class="field"><label for="f-name">Tu nombre *</label><input id="f-name" required></div>
+          <div class="field"><label for="f-business">Nombre del negocio</label><input id="f-business"></div>
+          <div class="field"><label for="f-email">Correo electrónico *</label><input id="f-email" type="email" required></div>
+          <div class="field"><label for="f-phone">Teléfono</label><input id="f-phone" type="tel"></div>
+          <div class="field full">
+            <label for="f-vertical">Rubro de tu negocio</label>
+            <select id="f-vertical">
+              <option value="">Selecciona...</option>
+              <option>Inmobiliaria</option>
+              <option>Clínica dental</option>
+              <option>Despacho de abogados</option>
+              <option>Hotel</option>
+              <option>Gimnasio</option>
+              <option>Asesoría de extranjería</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="f-message">Cuéntanos algo más (opcional)</label>
+            <textarea id="f-message" placeholder="Ej: recibimos muchos mensajes fuera de horario y se nos pierden clientes..."></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary form-submit">Enviar</button>
+        <p id="form-status" class="form-status"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-row">
+    <div class="brand"><span class="brand-mark">🤖</span> AI Lead Machine</div>
+    <p class="fine">Powered by el mismo motor que usa Acero Pulido.</p>
+  </div>
+</footer>
+
+<script>
+  var API_URL = 'https://ai-lead-machine-backend.onrender.com';
+
+  document.getElementById('lead-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var status = document.getElementById('form-status');
+    var submitBtn = document.querySelector('.form-submit');
+    submitBtn.disabled = true;
+    status.className = 'form-status';
+    status.textContent = 'Enviando...';
+
+    fetch(API_URL + '/business-leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: document.getElementById('f-name').value,
+        business_name: document.getElementById('f-business').value || null,
+        email: document.getElementById('f-email').value,
+        phone: document.getElementById('f-phone').value || null,
+        vertical_interest: document.getElementById('f-vertical').value || null,
+        message: document.getElementById('f-message').value || null,
+      }),
+    })
+      .then(function (r) { if (!r.ok) throw new Error('fail'); return r.json(); })
+      .then(function () {
+        status.className = 'form-status ok';
+        status.textContent = '¡Gracias! Te contactamos muy pronto.';
+        document.getElementById('lead-form').reset();
+      })
+      .catch(function () {
+        status.className = 'form-status err';
+        status.textContent = 'No se pudo enviar. Escríbenos directamente si el problema persiste.';
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+      });
+  });
+
+  fetch(API_URL + '/analytics/pageview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ page: 'implementar' }),
+  }).catch(function () {});
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.setAttribute('data-hidden', 'false');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function (el) { el.setAttribute('data-hidden', 'false'); });
+  }
+</script>
+</body>
+</html>
