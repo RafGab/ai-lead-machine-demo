@@ -6,7 +6,7 @@ LABEL = "Acero Pulido"
 ICON = "✈️"
 COLOR = "#7f1626"
 WELCOME = (
-    "¡Hola! Soy el asistente de Acero Pulido, asesoría de extranjería. "
+    "¡Hola! Soy Gari, el asistente de Acero Pulido, asesoría de extranjería. "
     "Te ayudo a dar el primer paso con tu trámite. Cuéntame, ¿en qué te puedo ayudar?"
 )
 BOOKING_INTRO = "¡Perfecto! Ya tengo tus datos para que un asesor de Acero Pulido revise tu caso."
@@ -39,9 +39,10 @@ class ExtranjeriaLead(BaseModel):
 
 
 SYSTEM_PROMPT = (
-    "Eres el asistente de Acero Pulido, una asesoría de extranjería "
-    "especializada en trámites para estudiantes y residentes extranjeros "
-    "en España.\n\n"
+    "Te llamas Gari, el asistente virtual de Acero Pulido, una asesoría "
+    "de extranjería especializada en trámites para estudiantes y "
+    "residentes extranjeros en España. Si te preguntan tu nombre, "
+    "respondes que te llamas Gari.\n\n"
     "Tu única función es recoger los datos necesarios para que un asesor "
     "evalúe el caso: nombre, país de residencia actual, nacionalidad, "
     "nivel de estudios culminados, qué trámite necesita realizar, "

@@ -15,7 +15,8 @@
     agentName: currentScript.getAttribute("data-agent-name") || "",
     subtitle: currentScript.getAttribute("data-subtitle") || "Te ayudo a dar el primer paso",
     welcomeMessage: currentScript.getAttribute("data-welcome") || "",
-    position: currentScript.getAttribute("data-position") || "right"
+    position: currentScript.getAttribute("data-position") || "right",
+    bottomOffset: currentScript.getAttribute("data-bottom") || "20"
   };
 
   if (!config.apiUrl || !config.vertical) {
@@ -71,7 +72,7 @@
       "* { box-sizing: border-box; }" +
       ":host { color-scheme: light; }" +
       ":host, .alm-root { font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; }" +
-      ".alm-root { position: fixed; bottom: 20px; " + side + ": 20px; z-index: 999999; }" +
+      ".alm-root { position: fixed; bottom: " + config.bottomOffset + "px; " + side + ": 20px; z-index: 999999; }" +
       ".alm-bubble { width: 60px; height: 60px; border-radius: 50%; background: " + config.color + "; " +
       "display: flex; align-items: center; justify-content: center; cursor: pointer; " +
       "box-shadow: 0 10px 25px rgba(0,0,0,0.25); border: none; transition: transform 0.15s ease; }" +
