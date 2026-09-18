@@ -2,14 +2,14 @@ from pydantic import BaseModel
 
 from backend.demo.ai_helper import call_ai, option
 
-LABEL = "Asesoría de Extranjería"
-ICON = "🌍"
-COLOR = "#0f4c75"
+LABEL = "Acero Pulido"
+ICON = "✈️"
+COLOR = "#7f1626"
 WELCOME = (
-    "¡Hola! Soy el asistente de la asesoría. Te ayudo a dar el primer paso "
-    "con tu trámite de extranjería. Cuéntame, ¿en qué te puedo ayudar?"
+    "¡Hola! Soy el asistente de Acero Pulido, asesoría de extranjería. "
+    "Te ayudo a dar el primer paso con tu trámite. Cuéntame, ¿en qué te puedo ayudar?"
 )
-BOOKING_INTRO = "¡Perfecto! Ya tengo tus datos para que un asesor revise tu caso."
+BOOKING_INTRO = "¡Perfecto! Ya tengo tus datos para que un asesor de Acero Pulido revise tu caso."
 
 PROCEDURES = [
     "estancia por estudios",
@@ -39,8 +39,9 @@ class ExtranjeriaLead(BaseModel):
 
 
 SYSTEM_PROMPT = (
-    "Eres el asistente de una asesoría de extranjería especializada en "
-    "trámites para estudiantes y residentes extranjeros en España.\n\n"
+    "Eres el asistente de Acero Pulido, una asesoría de extranjería "
+    "especializada en trámites para estudiantes y residentes extranjeros "
+    "en España.\n\n"
     "Tu única función es recoger los datos necesarios para que un asesor "
     "evalúe el caso: nombre, país de residencia actual, nacionalidad, "
     "nivel de estudios culminados, qué trámite necesita realizar, "
