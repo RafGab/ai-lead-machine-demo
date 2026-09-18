@@ -54,6 +54,14 @@ def widget_script():
     )
 
 
+@app.get("/widget-demo.js")
+def widget_demo_script():
+    return FileResponse(
+        "frontend/public/widget-demo.js",
+        media_type="application/javascript",
+    )
+
+
 app.include_router(properties_router)
 app.include_router(search_router)
 app.include_router(conversation_router)
