@@ -1,4 +1,4 @@
-from backend.demo.verticals import dental, despacho, hotel, gimnasio, propietarios
+from backend.demo.verticals import dental, despacho, hotel, gimnasio, propietarios, extranjeria
 
 # "inmobiliaria" no está aquí: usa directamente el motor real de
 # backend/services (ver backend/demo/orchestrator.py) para que la demo
@@ -8,6 +8,7 @@ GENERIC_VERTICALS = {
     "despacho": despacho,
     "hotel": hotel,
     "gimnasio": gimnasio,
+    "extranjeria": extranjeria,
     # "propietarios" es un segundo flujo DENTRO de Inmobiliaria (captación
     # de propietarios para gestión, no búsqueda de vivienda). No se lista
     # en list_verticals(): el frontend lo activa con un botón dentro de
@@ -18,7 +19,7 @@ GENERIC_VERTICALS = {
 # Subconjunto de GENERIC_VERTICALS que sí se listan como rubro propio en
 # el selector principal (excluye "propietarios", que se activa desde un
 # botón dentro de la pestaña de Inmobiliaria, no como rubro aparte).
-_LISTED_KEYS = ["dental", "despacho", "hotel", "gimnasio"]
+_LISTED_KEYS = ["dental", "despacho", "hotel", "gimnasio", "extranjeria"]
 
 INMOBILIARIA_META = {
     "label": "Inmobiliaria",
