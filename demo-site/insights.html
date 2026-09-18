@@ -54,6 +54,14 @@
   </div>
 
   <div id="content"></div>
+
+  <div id="demo-section" style="display:none; margin-top:40px; padding-top:8px; border-top:1px solid var(--line);">
+    <h2 style="margin-top:0;">Tu negocio en la demo</h2>
+    <div class="key-bar" style="margin-bottom:14px;">
+      <select id="vertical-select" style="flex:1; min-width:220px; padding:10px 14px; border:1px solid var(--line); border-radius:8px; font-size:14px;"></select>
+    </div>
+    <div id="demo-content"></div>
+  </div>
 </div>
 
 <script>
@@ -88,6 +96,57 @@
       .then(function (r) { if (!r.ok) throw new Error('clave inválida o error del servidor'); return r.json(); })
       .then(renderInsights)
       .catch(function (err) { content.innerHTML = '<p class="error">' + err.message + '</p>'; });
+
+    loadVerticalsForDemo(key);
+  }
+
+  function loadVerticalsForDemo(key) {
+    fetch(API_URL + '/demo/verticals')
+      .then(function (r) { return r.json(); })
+      .then(function (verticals) {
+        var select = document.getElementById('vertical-select');
+        var options = verticals.filter(function (v) { return v.key !== 'inmobiliaria'; });
+        if (options.length === 0) return;
+
+        select.innerHTML = options.map(function (v) {
+          return '<option value="' + v.key + '">' + escapeHtml(v.icon + ' ' + v.label) + '</option>';
+        }).join('');
+        select.onchange = function () { loadDemoInsights(key, select.value); };
+
+        document.getElementById('demo-section').style.display = 'block';
+        loadDemoInsights(key, select.value);
+      })
+      .catch(function () {});
+  }
+
+  function loadDemoInsights(key, vertical) {
+    var content = document.getElementById('demo-content');
+    content.innerHTML = 'Cargando...';
+
+    fetch(API_URL + '/admin/insights-demo?vertical=' + encodeURIComponent(vertical) + '&key=' + encodeURIComponent(key))
+      .then(function (r) { if (!r.ok) throw new Error('clave inválida o error del servidor'); return r.json(); })
+      .then(renderDemoInsights)
+      .catch(function (err) { content.innerHTML = '<p class="error">' + err.message + '</p>'; });
+  }
+
+  function renderDemoInsights(data) {
+    var content = document.getElementById('demo-content');
+
+    var statsHtml =
+      '<div class="stats-row">' +
+      '<div class="stat-card"><div class="n">' + data.pageviews_month + '</div><div class="l">Visitas a tu página este mes</div></div>' +
+      '<div class="stat-card"><div class="n">' + data.leads_from_site + '</div><div class="l">Conversaciones reales desde tu página' +
+      (data.leads_total > data.leads_from_site ? ' (' + data.leads_total + ' incl. pruebas de la demo)' : '') +
+      '</div></div>' +
+      '</div>';
+
+    var narrativeHtml =
+      '<h2>Qué está pasando en tu página</h2>' +
+      '<div class="narrative-card">' +
+      data.narrative.map(function (line) { return '<p>' + escapeHtml(line) + '</p>'; }).join('') +
+      '</div>';
+
+    content.innerHTML = statsHtml + narrativeHtml;
   }
 
   function renderInsights(data) {

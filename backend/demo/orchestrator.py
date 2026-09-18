@@ -19,6 +19,7 @@ def process_demo_message(
     conversation_id: int | None = None,
     field: str | None = None,
     value=None,
+    source: str = "demo",
 ) -> dict:
     """
     Punto de entrada único para la demo comercial multi-rubro.
@@ -40,7 +41,7 @@ def process_demo_message(
         raise ValueError(f"Rubro de demo desconocido: {vertical}")
 
     if conversation_id is None:
-        conversation_id = repository.create_conversation(vertical)
+        conversation_id = repository.create_conversation(vertical, source)
 
     conversation = repository.get_conversation(conversation_id)
     if conversation is None:

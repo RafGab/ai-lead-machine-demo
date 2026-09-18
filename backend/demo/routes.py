@@ -14,6 +14,7 @@ class DemoMessage(BaseModel):
     conversation_id: int | None = None
     field: str | None = None
     value: bool | int | float | str | None = None
+    source: str = "demo"
 
 
 @router.get("/verticals")
@@ -30,6 +31,7 @@ def post_message(request: DemoMessage):
             conversation_id=request.conversation_id,
             field=request.field,
             value=request.value,
+            source=request.source,
         )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))

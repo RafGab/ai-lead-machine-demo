@@ -19,6 +19,10 @@ def create_tables() -> None:
 
     # Migración segura para bases de datos creadas antes de añadir "status".
     _ensure_column(connection, "demo_conversations", "status", "TEXT NOT NULL DEFAULT 'active'")
+    # "source" distingue conversaciones iniciadas probando la demo
+    # ("demo") de las de un widget embebido en la web real de un
+    # cliente ("widget"), para no mezclar sus métricas.
+    _ensure_column(connection, "demo_conversations", "source", "TEXT NOT NULL DEFAULT 'demo'")
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS demo_messages (
@@ -35,12 +39,12 @@ def create_tables() -> None:
     connection.close()
 
 
-def create_conversation(vertical: str) -> int:
+def create_conversation(vertical: str, source: str = "demo") -> int:
     connection = get_connection()
 
     cursor = connection.execute(
-        "INSERT INTO demo_conversations (vertical, lead_data) VALUES (?, ?)",
-        (vertical, "{}"),
+        "INSERT INTO demo_conversations (vertical, lead_data, source) VALUES (?, ?, ?)",
+        (vertical, "{}", source),
     )
 
     conversation_id = cursor.lastrowid
@@ -91,6 +95,7 @@ def get_conversation(conversation_id: int) -> dict | None:
         "vertical": conversation["vertical"],
         "lead_data": json.loads(conversation["lead_data"]),
         "status": conversation["status"],
+        "source": conversation["source"],
         "created_at": conversation["created_at"],
         "updated_at": conversation["updated_at"],
         "messages": [dict(message) for message in messages],

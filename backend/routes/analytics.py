@@ -17,6 +17,28 @@ HOUR_LABELS_ES = {
     12: "el mediodía", 15: "la tarde", 18: "la tarde-noche", 21: "la noche",
 }
 
+# Campos que nunca se agrupan en las estadísticas por rubro: son datos
+# personales del lead, no categorías de interés.
+PII_FIELDS = {"name", "phone", "email"}
+
+# Etiquetas en español para los campos más comunes de los rubros de la
+# demo. Un campo que no esté aquí se muestra con su nombre tal cual
+# (para no bloquear rubros nuevos que se añadan después).
+FIELD_LABELS = {
+    "procedure": "trámite",
+    "current_country": "país de residencia",
+    "nationality": "nacionalidad",
+    "education_level": "nivel de estudios",
+    "contact_hours": "horario de contacto",
+    "goal": "objetivo",
+    "membership_type": "tipo de membresía",
+    "preferred_schedule": "horario preferido",
+    "room_type": "tipo de habitación",
+    "area": "área",
+    "specialty": "especialidad",
+    "current_status": "estado del piso",
+}
+
 
 class PageViewRequest(BaseModel):
     page: str
@@ -214,4 +236,147 @@ def get_insights(key: str | None = None):
         ],
         "narrative": narrative,
         "suggestions": suggestions,
+    }
+
+
+@router.get("/admin/insights-demo")
+def get_insights_demo(vertical: str, key: str | None = None):
+    """
+    Métricas para un rubro de la demo (ej. "extranjeria"), separando las
+    conversaciones reales iniciadas desde el widget embebido en la web
+    de un cliente ("source" = "widget") de las que solo prueban el
+    rubro dentro de la propia demo ("source" = "demo").
+    """
+
+    _check_admin_key(key)
+
+    now = datetime.now()
+    month_start = _month_bounds(now)
+    page = f"widget:{vertical}"
+
+    connection = get_connection()
+
+    pageviews_total = connection.execute(
+        "SELECT COUNT(*) AS n FROM page_views WHERE page = ?", (page,)
+    ).fetchone()["n"]
+
+    pageviews_month = connection.execute(
+        "SELECT COUNT(*) AS n FROM page_views WHERE page = ? AND created_at >= ?",
+        (page, month_start.isoformat(sep=" ")),
+    ).fetchone()["n"]
+
+    rows = connection.execute(
+        "SELECT lead_data, source, created_at FROM demo_conversations WHERE vertical = ?",
+        (vertical,),
+    ).fetchall()
+
+    connection.close()
+
+    leads_total = 0
+    leads_month = 0
+    leads_from_site = 0
+    field_counters: dict[str, Counter] = {}
+    hour_counter = Counter()
+    hour_labels = {}
+
+    for row in rows:
+        try:
+            lead = json.loads(row["lead_data"] or "{}")
+        except (json.JSONDecodeError, TypeError):
+            lead = {}
+
+        if not any(v not in (None, "", False) for v in lead.values()):
+            continue
+
+        try:
+            created_at = datetime.fromisoformat(row["created_at"])
+        except (ValueError, TypeError):
+            created_at = None
+
+        is_from_site = row["source"] == "widget"
+
+        leads_total += 1
+        if is_from_site:
+            leads_from_site += 1
+        if created_at is not None and created_at >= month_start:
+            leads_month += 1
+
+        # El desglose por campo y por horario solo cuenta leads reales
+        # de la página del cliente — no los de gente probando la demo.
+        if not is_from_site:
+            continue
+
+        for field_name, field_value in lead.items():
+            if field_name in PII_FIELDS or field_value in (None, "", False):
+                continue
+            field_counters.setdefault(field_name, Counter())[str(field_value)] += 1
+
+        if created_at is not None:
+            bucket_start, label = _hour_bucket(created_at.hour)
+            hour_counter[bucket_start] += 1
+            hour_labels[bucket_start] = label
+
+    narrative = []
+
+    if pageviews_total > 0:
+        narrative.append(
+            f"Tu página ha tenido {pageviews_total} visitas en total"
+            + (f", {pageviews_month} de ellas este mes." if pageviews_month else ".")
+        )
+    else:
+        narrative.append(
+            "Todavía no hay visitas registradas desde tu página — el conteo "
+            "empieza en cuanto alguien la visite con el widget instalado."
+        )
+
+    if leads_from_site > 0:
+        extra = (
+            f" (de {leads_total} en total, incluyendo pruebas de la demo)."
+            if leads_total > leads_from_site else "."
+        )
+        narrative.append(
+            f"Se han iniciado {leads_from_site} conversaciones reales desde tu página{extra}"
+        )
+    else:
+        narrative.append("Todavía no hay conversaciones reales iniciadas desde tu página.")
+
+    fields = []
+    for field_name, counter in field_counters.items():
+        if not counter:
+            continue
+        label = FIELD_LABELS.get(field_name, field_name)
+        top_value, top_count = counter.most_common(1)[0]
+        fields.append({
+            "field": field_name,
+            "label": label,
+            "top_values": counter.most_common(5),
+        })
+        narrative.append(
+            f'El valor más frecuente en "{label}" es "{top_value}" '
+            f"({top_count} de {sum(counter.values())})."
+        )
+
+    if hour_counter:
+        top_hour_start, top_hour_n = hour_counter.most_common(1)[0]
+        top_label = hour_labels[top_hour_start]
+        share = top_hour_n / sum(hour_counter.values())
+        narrative.append(
+            f"La franja con más actividad en tu página es entre las {top_label} "
+            f"({share:.0%} de los contactos)."
+        )
+
+    return {
+        "vertical": vertical,
+        "period": now.strftime("%B %Y"),
+        "pageviews_total": pageviews_total,
+        "pageviews_month": pageviews_month,
+        "leads_total": leads_total,
+        "leads_month": leads_month,
+        "leads_from_site": leads_from_site,
+        "fields": fields,
+        "busiest_hours": [
+            {"label": hour_labels[h], "count": n}
+            for h, n in hour_counter.most_common(5)
+        ],
+        "narrative": narrative,
     }

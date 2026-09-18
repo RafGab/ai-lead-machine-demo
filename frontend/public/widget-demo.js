@@ -52,7 +52,19 @@
       config.agentName = config.agentName || "Agente IA";
       config.welcomeMessage = config.welcomeMessage || "Hola 👋 ¿En qué puedo ayudarte hoy?";
       init();
+      trackPageview();
     });
+
+  function trackPageview() {
+    // Cada web donde se embeba este widget cuenta como una visita a su
+    // propio "page" (namespaced por rubro), separada de las visitas al
+    // demo-site de AI Lead Machine.
+    fetch(config.apiUrl + "/analytics/pageview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: "widget:" + config.vertical })
+    }).catch(function () {});
+  }
 
   function init() {
     var styles =
@@ -236,7 +248,8 @@
       var payload = {
         vertical: config.vertical,
         message: text,
-        conversation_id: state.conversationId
+        conversation_id: state.conversationId,
+        source: "widget"
       };
 
       if (option) {
