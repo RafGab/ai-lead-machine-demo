@@ -105,6 +105,14 @@
       ".alm-option-row:hover { background: rgba(0,0,0,0.035); }" +
       ".alm-option-row:active { background: " + config.color + "; color: white; }" +
       ".alm-typing { font-size: 12px; color: #9ca3af; padding: 0 16px 8px; }" +
+      ".alm-booking { max-width: 84%; margin-top: 4px; background: white; border: 1px solid #e5e7eb; border-radius: 13px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }" +
+      ".alm-booking-row { display: flex; gap: 6px; }" +
+      ".alm-booking input { border: 1px solid #d1d5db; border-radius: 7px; padding: 7px 9px; font-size: 12.5px; width: 100%; outline: none; font-family: inherit; background: white; color: #1f2937; }" +
+      ".alm-booking-btn { border: none; border-radius: 8px; background: " + config.color + "; color: white; padding: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; }" +
+      ".alm-booking-status { font-size: 11.5px; color: #16a34a; }" +
+      ".alm-slots { display: flex; flex-wrap: wrap; gap: 6px; }" +
+      ".alm-slot-btn { border: 1px solid " + config.color + "; background: white; color: " + config.color + "; border-radius: 20px; padding: 5px 10px; font-size: 11px; cursor: pointer; }" +
+      ".alm-slot-btn:hover { background: rgba(0,0,0,0.04); }" +
       ".alm-input-row { padding: 12px; background: white; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; }" +
       ".alm-input-row input { flex: 1; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px 12px; font-size: 13px; outline: none; font-family: inherit; background: white; color: #1f2937; }" +
       ".alm-input-row input:focus { border-color: " + config.color + "; }" +
@@ -229,6 +237,110 @@
       scrollToBottom();
     }
 
+    function renderBookingForm() {
+      // Si ya hay un formulario de cita abierto, no duplicarlo.
+      var existing = messagesEl.querySelector(".alm-booking");
+      if (existing) existing.remove();
+
+      var wrap = document.createElement("div");
+      wrap.className = "alm-booking";
+      wrap.innerHTML =
+        '<div class="alm-booking-row">' +
+        '<input type="date" class="alm-booking-date" />' +
+        '<input type="time" class="alm-booking-time" />' +
+        "</div>" +
+        '<button type="button" class="alm-booking-btn">📅 Agendar cita</button>';
+
+      messagesEl.appendChild(wrap);
+      scrollToBottom();
+
+      wrap.querySelector(".alm-booking-btn").addEventListener("click", function () {
+        submitBooking(wrap);
+      });
+    }
+
+    function submitBooking(wrap, overrideDateTime) {
+      var scheduledAt = overrideDateTime;
+
+      if (!scheduledAt) {
+        var date = wrap.querySelector(".alm-booking-date").value;
+        var time = wrap.querySelector(".alm-booking-time").value;
+        if (!date || !time) {
+          showBookingStatus(wrap, "Indica fecha y hora para la cita.");
+          return;
+        }
+        scheduledAt = date + "T" + time + ":00";
+      }
+
+      fetch(config.apiUrl + "/demo/book-appointment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: state.conversationId,
+          scheduled_at: scheduledAt
+        })
+      })
+        .then(function (response) {
+          if (!response.ok) throw new Error("request failed");
+          return response.json();
+        })
+        .then(function (data) {
+          showBookingStatus(wrap, data.message);
+
+          var oldSlots = wrap.querySelector(".alm-slots");
+          if (oldSlots) oldSlots.remove();
+
+          if (data.calendar_status === "unavailable" && data.alternative_slots && data.alternative_slots.length > 0) {
+            var slotsWrap = document.createElement("div");
+            slotsWrap.className = "alm-slots";
+
+            data.alternative_slots.forEach(function (slot) {
+              var slotBtn = document.createElement("button");
+              slotBtn.type = "button";
+              slotBtn.className = "alm-slot-btn";
+              slotBtn.textContent = formatSlotLabel(slot);
+              slotBtn.addEventListener("click", function () {
+                submitBooking(wrap, slot);
+              });
+              slotsWrap.appendChild(slotBtn);
+            });
+
+            wrap.appendChild(slotsWrap);
+          } else if (data.appointment_id) {
+            wrap.querySelectorAll("input, .alm-booking-btn, .alm-booking-row").forEach(function (el) {
+              el.style.display = "none";
+            });
+          }
+
+          scrollToBottom();
+        })
+        .catch(function () {
+          showBookingStatus(wrap, "No se pudo agendar la cita. Inténtalo de nuevo.");
+        });
+    }
+
+    function showBookingStatus(wrap, message) {
+      var status = wrap.querySelector(".alm-booking-status");
+      if (!status) {
+        status = document.createElement("div");
+        status.className = "alm-booking-status";
+        wrap.appendChild(status);
+      }
+      status.textContent = message;
+    }
+
+    function formatSlotLabel(isoString) {
+      var date = new Date(isoString);
+      if (isNaN(date.getTime())) return isoString;
+      var days = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+      var day = days[date.getDay()];
+      var d = String(date.getDate()).padStart(2, "0");
+      var m = String(date.getMonth() + 1).padStart(2, "0");
+      var h = String(date.getHours()).padStart(2, "0");
+      var min = String(date.getMinutes()).padStart(2, "0");
+      return day + " " + d + "/" + m + " " + h + ":" + min;
+    }
+
     function sendMessage(option) {
       var text = option ? option.label : input.value.trim();
       if (!text || state.sending) return;
@@ -271,6 +383,9 @@
           state.conversationId = data.conversation_id;
           state.optionsField = data.options_field || null;
           addAssistantMessage(data.assistant_message, data.options);
+          if (data.result && data.result.booking_available) {
+            renderBookingForm();
+          }
         })
         .catch(function () {
           addAssistantMessage(

@@ -35,6 +35,22 @@ def create_tables() -> None:
         )
     """)
 
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS demo_appointments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL,
+            vertical TEXT NOT NULL,
+            scheduled_at TEXT NOT NULL,
+            lead_name TEXT,
+            lead_phone TEXT,
+            lead_email TEXT,
+            calendar_status TEXT NOT NULL DEFAULT 'pending',
+            calendar_event_id TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES demo_conversations(id)
+        )
+    """)
+
     connection.commit()
     connection.close()
 
@@ -120,6 +136,50 @@ def mark_completed(conversation_id: int) -> None:
     connection.execute(
         "UPDATE demo_conversations SET status = 'completed', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         (conversation_id,),
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def create_appointment(
+    conversation_id: int,
+    vertical: str,
+    scheduled_at: str,
+    lead_name: str | None = None,
+    lead_phone: str | None = None,
+    lead_email: str | None = None,
+) -> int:
+    connection = get_connection()
+
+    cursor = connection.execute(
+        """
+        INSERT INTO demo_appointments (
+            conversation_id, vertical, scheduled_at, lead_name, lead_phone, lead_email
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (conversation_id, vertical, scheduled_at, lead_name, lead_phone, lead_email),
+    )
+
+    appointment_id = cursor.lastrowid
+
+    connection.commit()
+    connection.close()
+
+    return appointment_id
+
+
+def set_appointment_calendar_result(
+    appointment_id: int,
+    calendar_status: str,
+    calendar_event_id: str | None = None,
+) -> None:
+    connection = get_connection()
+
+    connection.execute(
+        "UPDATE demo_appointments SET calendar_status = ?, calendar_event_id = ? WHERE id = ?",
+        (calendar_status, calendar_event_id, appointment_id),
     )
 
     connection.commit()

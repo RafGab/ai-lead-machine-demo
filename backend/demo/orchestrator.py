@@ -108,7 +108,7 @@ def process_demo_message(
             "conversation_id": conversation_id,
             "vertical": vertical,
             "lead": existing_data,
-            "result": {"status": "completed"},
+            "result": {"status": "completed", "booking_available": True},
             "assistant_message": assistant_message,
             "options": None,
             "options_field": None,
@@ -193,7 +193,11 @@ def process_demo_message(
         assistant_message = "\n".join(lines)
         options = None
         options_field = None
-        result = {"status": "completed", "priority": priority_info.get("priority", "normal")}
+        result = {
+            "status": "completed",
+            "priority": priority_info.get("priority", "normal"),
+            "booking_available": True,
+        }
         repository.mark_completed(conversation_id)
 
     repository.save_message(conversation_id, "assistant", assistant_message)

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from backend.demo.orchestrator import process_demo_message
 from backend.demo.verticals import list_verticals
-from backend.demo import repository
+from backend.demo import repository, booking_service
 
 router = APIRouter(prefix="/demo")
 
@@ -15,6 +15,11 @@ class DemoMessage(BaseModel):
     field: str | None = None
     value: bool | int | float | str | None = None
     source: str = "demo"
+
+
+class BookAppointment(BaseModel):
+    conversation_id: int
+    scheduled_at: str
 
 
 @router.get("/verticals")
@@ -35,6 +40,17 @@ def post_message(request: DemoMessage):
         )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+
+@router.post("/book-appointment")
+def book_appointment(request: BookAppointment):
+    try:
+        return booking_service.schedule_appointment(
+            conversation_id=request.conversation_id,
+            scheduled_at=request.scheduled_at,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error))
 
 
 @router.get("/conversations/{conversation_id}")

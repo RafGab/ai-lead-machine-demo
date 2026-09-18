@@ -119,6 +119,14 @@
   .option-btn { padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--vc, var(--accent)); color: var(--vc, var(--accent)); background: var(--paper); font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
   .option-btn:hover { background: color-mix(in srgb, var(--vc, var(--accent)) 12%, var(--paper)); }
 
+  .booking-card { align-self: flex-start; max-width: 82%; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .booking-row { display: flex; gap: 6px; }
+  .booking-card input { border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; font-size: 13px; font-family: inherit; width: 100%; outline: none; background: var(--surface); }
+  .booking-btn { border: none; border-radius: 8px; background: var(--vc, var(--accent)); color: white; padding: 9px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .booking-status { font-size: 12px; color: #16a34a; }
+  .booking-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+  .booking-slot-btn { border: 1px solid var(--vc, var(--accent)); background: var(--paper); color: var(--vc, var(--accent)); border-radius: 20px; padding: 5px 10px; font-size: 11.5px; cursor: pointer; font-family: inherit; }
+
   .chat-input-row { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); background: var(--paper); }
   .chat-input-row input { flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 14.5px; font-family: inherit; outline: none; background: var(--surface); }
   .chat-input-row input:focus { border-color: var(--vc, var(--accent)); }
@@ -439,6 +447,104 @@
     body.scrollTop = body.scrollHeight;
   }
 
+  function appendBookingForm() {
+    var body = document.getElementById('chat-body');
+
+    var existing = body.querySelector('.booking-card');
+    if (existing) existing.remove();
+
+    var card = document.createElement('div');
+    card.className = 'booking-card';
+    card.innerHTML =
+      '<div class="booking-row">' +
+      '<input type="date" class="booking-date" />' +
+      '<input type="time" class="booking-time" />' +
+      '</div>' +
+      '<button type="button" class="booking-btn">📅 Agendar cita</button>';
+
+    body.appendChild(card);
+    body.scrollTop = body.scrollHeight;
+
+    card.querySelector('.booking-btn').addEventListener('click', function () {
+      submitBooking(card);
+    });
+  }
+
+  function submitBooking(card, overrideDateTime) {
+    var scheduledAt = overrideDateTime;
+
+    if (!scheduledAt) {
+      var date = card.querySelector('.booking-date').value;
+      var time = card.querySelector('.booking-time').value;
+      if (!date || !time) {
+        showBookingStatus(card, 'Indica fecha y hora para la cita.');
+        return;
+      }
+      scheduledAt = date + 'T' + time + ':00';
+    }
+
+    fetch(API_URL + '/demo/book-appointment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversation_id: state.conversationId,
+        scheduled_at: scheduledAt,
+      }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        showBookingStatus(card, data.message);
+
+        var oldSlots = card.querySelector('.booking-slots');
+        if (oldSlots) oldSlots.remove();
+
+        if (data.calendar_status === 'unavailable' && data.alternative_slots && data.alternative_slots.length) {
+          var slotsWrap = document.createElement('div');
+          slotsWrap.className = 'booking-slots';
+          data.alternative_slots.forEach(function (slot) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'booking-slot-btn';
+            btn.textContent = formatSlotLabel(slot);
+            btn.onclick = function () { submitBooking(card, slot); };
+            slotsWrap.appendChild(btn);
+          });
+          card.appendChild(slotsWrap);
+        } else if (data.appointment_id) {
+          card.querySelectorAll('input, .booking-btn, .booking-row').forEach(function (el) {
+            el.style.display = 'none';
+          });
+        }
+
+        document.getElementById('chat-body').scrollTop = document.getElementById('chat-body').scrollHeight;
+      })
+      .catch(function () {
+        showBookingStatus(card, 'No se pudo agendar la cita. Inténtalo de nuevo.');
+      });
+  }
+
+  function showBookingStatus(card, message) {
+    var status = card.querySelector('.booking-status');
+    if (!status) {
+      status = document.createElement('div');
+      status.className = 'booking-status';
+      card.appendChild(status);
+    }
+    status.textContent = message;
+  }
+
+  function formatSlotLabel(isoString) {
+    var date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    var days = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+    var day = days[date.getDay()];
+    var d = String(date.getDate()).padStart(2, '0');
+    var m = String(date.getMonth() + 1).padStart(2, '0');
+    var h = String(date.getHours()).padStart(2, '0');
+    var min = String(date.getMinutes()).padStart(2, '0');
+    return day + ' ' + d + '/' + m + ' ' + h + ':' + min;
+  }
+
   function sendMessage() {
     var input = document.getElementById('chat-input');
     var text = input.value.trim();
@@ -471,6 +577,7 @@
         state.conversationId = data.conversation_id;
         if (data.assistant_message) appendBubble('assistant', data.assistant_message);
         if (data.options && data.options.length) appendOptions(data.options, data.options_field);
+        if (data.result && data.result.booking_available) appendBookingForm();
       })
       .catch(function () {
         typing.remove();

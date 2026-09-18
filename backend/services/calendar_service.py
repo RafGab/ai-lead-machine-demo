@@ -38,6 +38,74 @@ def _get_access_token() -> str:
     return credentials.token
 
 
+def _calendar_id_for(vertical: str | None) -> str | None:
+    """
+    Cada rubro puede tener su propio calendario (GOOGLE_CALENDAR_ID_<RUBRO>,
+    ej. GOOGLE_CALENDAR_ID_EXTRANJERIA para Acero Pulido), compartido con
+    la misma cuenta de servicio. Si no hay uno específico, se usa el
+    calendario genérico GOOGLE_CALENDAR_ID (el de inmobiliaria/demo).
+    """
+
+    if vertical:
+        specific = os.getenv(f"GOOGLE_CALENDAR_ID_{vertical.upper()}")
+        if specific:
+            return specific
+
+    return os.getenv("GOOGLE_CALENDAR_ID")
+
+
+def _comercial_email_for(vertical: str | None) -> str | None:
+    if vertical:
+        specific = os.getenv(f"COMERCIAL_EMAIL_{vertical.upper()}")
+        if specific:
+            return specific
+
+    return os.getenv("COMERCIAL_EMAIL")
+
+
+def _calendar_not_configured_message(vertical: str | None) -> str:
+    if vertical:
+        return (
+            f"No hay calendario configurado para \"{vertical}\" "
+            f"(GOOGLE_CALENDAR_ID_{vertical.upper()} o GOOGLE_CALENDAR_ID)."
+        )
+
+    return "GOOGLE_CALENDAR_ID no está configurado en el archivo .env."
+
+
+def _post_calendar_event(
+    calendar_id: str,
+    summary: str,
+    description: str,
+    scheduled_at: str,
+    attendees: list[dict],
+) -> str:
+    access_token = _get_access_token()
+    time_zone = os.getenv("GOOGLE_CALENDAR_TIMEZONE", "Europe/Madrid")
+
+    start_dt = datetime.fromisoformat(scheduled_at)
+    end_dt = start_dt + VISIT_DURATION
+
+    event_body = {
+        "summary": summary,
+        "description": description,
+        "start": {"dateTime": start_dt.isoformat(), "timeZone": time_zone},
+        "end": {"dateTime": end_dt.isoformat(), "timeZone": time_zone},
+        "attendees": attendees,
+    }
+
+    response = httpx.post(
+        f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events",
+        headers={"Authorization": f"Bearer {access_token}"},
+        params={"sendUpdates": "all"},
+        json=event_body,
+        timeout=10,
+    )
+    response.raise_for_status()
+
+    return response.json()["id"]
+
+
 def create_visit_event(
     property_title: str,
     property_city: str,
@@ -53,20 +121,13 @@ def create_visit_event(
     Lanza CalendarNotConfigured si faltan variables de entorno.
     """
 
-    calendar_id = os.getenv("GOOGLE_CALENDAR_ID")
-    comercial_email = os.getenv("COMERCIAL_EMAIL")
+    calendar_id = _calendar_id_for(None)
+    comercial_email = _comercial_email_for(None)
 
     if not calendar_id:
         raise CalendarNotConfigured(
             "GOOGLE_CALENDAR_ID no está configurado en el archivo .env."
         )
-
-    access_token = _get_access_token()
-
-    time_zone = os.getenv("GOOGLE_CALENDAR_TIMEZONE", "Europe/Madrid")
-
-    start_dt = datetime.fromisoformat(scheduled_at)
-    end_dt = start_dt + VISIT_DURATION
 
     description_lines = [
         "Visita generada automáticamente por el agente IA.",
@@ -90,24 +151,49 @@ def create_visit_event(
     if lead_email:
         attendees.append({"email": lead_email})
 
-    event_body = {
-        "summary": f"Visita: {property_title}",
-        "description": "\n".join(description_lines),
-        "start": {"dateTime": start_dt.isoformat(), "timeZone": time_zone},
-        "end": {"dateTime": end_dt.isoformat(), "timeZone": time_zone},
-        "attendees": attendees,
-    }
-
-    response = httpx.post(
-        f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events",
-        headers={"Authorization": f"Bearer {access_token}"},
-        params={"sendUpdates": "all"},
-        json=event_body,
-        timeout=10,
+    return _post_calendar_event(
+        calendar_id,
+        summary=f"Visita: {property_title}",
+        description="\n".join(description_lines),
+        scheduled_at=scheduled_at,
+        attendees=attendees,
     )
-    response.raise_for_status()
 
-    return response.json()["id"]
+
+def create_event(
+    summary: str,
+    description: str,
+    scheduled_at: str,
+    attendee_email: str | None = None,
+    vertical: str | None = None,
+) -> str:
+    """
+    Crea un evento de calendario genérico (cita, consulta...) para
+    cualquier rubro de la demo. Igual que create_visit_event pero sin
+    atarse al modelo de "propiedad" de inmobiliaria.
+    """
+
+    calendar_id = _calendar_id_for(vertical)
+
+    if not calendar_id:
+        raise CalendarNotConfigured(_calendar_not_configured_message(vertical))
+
+    attendees = []
+
+    comercial_email = _comercial_email_for(vertical)
+    if comercial_email:
+        attendees.append({"email": comercial_email})
+
+    if attendee_email:
+        attendees.append({"email": attendee_email})
+
+    return _post_calendar_event(
+        calendar_id,
+        summary=summary,
+        description=description,
+        scheduled_at=scheduled_at,
+        attendees=attendees,
+    )
 
 
 def _parse_business_days(raw: str) -> set[int]:
@@ -119,6 +205,8 @@ def _parse_business_days(raw: str) -> set[int]:
 #   BUSINESS_HOURS_START / BUSINESS_HOURS_END: hora de inicio/fin (0-23)
 #   BUSINESS_DAYS: días de la semana como enteros separados por coma,
 #     Monday=0 ... Sunday=6 (por defecto "0,1,2,3,4" = lunes a viernes)
+# Cada rubro puede tener su propia franja (ej. BUSINESS_HOURS_START_EXTRANJERIA)
+# igual que su propio calendario; si no la define, usa la genérica.
 BUSINESS_HOURS_START = int(os.getenv("BUSINESS_HOURS_START", "10"))
 BUSINESS_HOURS_END = int(os.getenv("BUSINESS_HOURS_END", "19"))
 BUSINESS_DAYS = _parse_business_days(os.getenv("BUSINESS_DAYS", "0,1,2,3,4"))
@@ -126,19 +214,29 @@ SLOT_STEP = timedelta(minutes=30)
 SEARCH_WINDOW = timedelta(days=5)
 
 
-def _within_business_hours(moment: datetime) -> bool:
-    return moment.weekday() in BUSINESS_DAYS and BUSINESS_HOURS_START <= moment.hour < BUSINESS_HOURS_END
+def _business_hours_for(vertical: str | None) -> tuple[int, int, set[int]]:
+    suffix = f"_{vertical.upper()}" if vertical else ""
+
+    start = int(os.getenv(f"BUSINESS_HOURS_START{suffix}", "") or BUSINESS_HOURS_START)
+    end = int(os.getenv(f"BUSINESS_HOURS_END{suffix}", "") or BUSINESS_HOURS_END)
+    days_raw = os.getenv(f"BUSINESS_DAYS{suffix}", "")
+    days = _parse_business_days(days_raw) if days_raw else BUSINESS_DAYS
+
+    return start, end, days
+
+
+def _within_business_hours(moment: datetime, vertical: str | None = None) -> bool:
+    start, end, days = _business_hours_for(vertical)
+    return moment.weekday() in days and start <= moment.hour < end
 
 
 def _get_busy_periods(
-    window_start: datetime, window_end: datetime
+    window_start: datetime, window_end: datetime, vertical: str | None = None
 ) -> list[tuple[datetime, datetime]]:
-    calendar_id = os.getenv("GOOGLE_CALENDAR_ID")
+    calendar_id = _calendar_id_for(vertical)
 
     if not calendar_id:
-        raise CalendarNotConfigured(
-            "GOOGLE_CALENDAR_ID no está configurado en el archivo .env."
-        )
+        raise CalendarNotConfigured(_calendar_not_configured_message(vertical))
 
     access_token = _get_access_token()
 
@@ -176,7 +274,7 @@ def _overlaps(
     )
 
 
-def is_slot_available(scheduled_at: str) -> bool:
+def is_slot_available(scheduled_at: str, vertical: str | None = None) -> bool:
     """
     Comprueba si el horario solicitado cae dentro de la franja de
     atención configurada y si el comercial está libre en ese momento.
@@ -192,36 +290,40 @@ def is_slot_available(scheduled_at: str) -> bool:
     # lanza CalendarNotConfigured igual que antes (sin este cambio),
     # así que el resto del flujo no se ve afectado cuando no hay
     # credenciales de Google Calendar todavía.
-    busy_periods = _get_busy_periods(start_dt, end_dt)
+    busy_periods = _get_busy_periods(start_dt, end_dt, vertical)
 
-    if not _within_business_hours(start_dt):
+    if not _within_business_hours(start_dt, vertical):
         return False
 
     return not _overlaps(start_dt, end_dt, busy_periods)
 
 
-def suggest_alternative_slots(scheduled_at: str, count: int = 3) -> list[str]:
+def suggest_alternative_slots(
+    scheduled_at: str, count: int = 3, vertical: str | None = None
+) -> list[str]:
     """
     Busca huecos libres cercanos a la fecha solicitada, dentro del
     horario comercial, para ofrecerlos como alternativa al cliente.
     """
 
+    hours_start, hours_end, days = _business_hours_for(vertical)
+
     requested_dt = datetime.fromisoformat(scheduled_at)
 
     window_start = requested_dt.replace(
-        hour=BUSINESS_HOURS_START, minute=0, second=0, microsecond=0
+        hour=hours_start, minute=0, second=0, microsecond=0
     )
     window_end = window_start + SEARCH_WINDOW
 
-    busy_periods = _get_busy_periods(window_start, window_end)
+    busy_periods = _get_busy_periods(window_start, window_end, vertical)
 
     suggestions = []
     cursor = window_start
 
     while cursor < window_end and len(suggestions) < count:
-        if cursor.weekday() not in BUSINESS_DAYS or cursor.hour >= BUSINESS_HOURS_END:
+        if cursor.weekday() not in days or cursor.hour >= hours_end:
             cursor = (cursor + timedelta(days=1)).replace(
-                hour=BUSINESS_HOURS_START, minute=0
+                hour=hours_start, minute=0
             )
             continue
 
