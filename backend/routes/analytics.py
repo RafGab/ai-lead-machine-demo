@@ -10,6 +10,7 @@ from backend.database.database import get_connection
 from backend.demo import repository as demo_repository
 from backend.demo.field_labels import FIELD_LABELS, PII_FIELDS
 from backend.routes.study_leads import _check_admin_key
+from backend.services.geo_names import group_for_stats
 from backend.services.normalization import normalize_operation, normalize_property_type
 
 router = APIRouter()
@@ -288,7 +289,8 @@ def get_insights_demo(vertical: str, key: str | None = None):
         for field_name, field_value in lead.items():
             if field_name in PII_FIELDS or field_value in (None, "", False):
                 continue
-            field_counters.setdefault(field_name, Counter())[str(field_value)] += 1
+            grouped_value = group_for_stats(field_name, str(field_value))
+            field_counters.setdefault(field_name, Counter())[grouped_value] += 1
 
         if created_at is not None:
             bucket_start, label = _hour_bucket(created_at.hour)

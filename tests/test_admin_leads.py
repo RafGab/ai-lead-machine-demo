@@ -59,7 +59,7 @@ def test_completed_lead_from_the_site_shows_contact_and_details(client, chat):
     assert lead["completed"] is True
     assert lead["phone"] == "+34 600 123 456"
     assert lead["email"] == "carlos@example.com"
-    assert {"label": "nacionalidad", "value": "peruana"} in lead["details"]
+    assert {"label": "nacionalidad", "value": "Peruana"} in lead["details"]
     assert lead["created_at"].endswith("Z")
 
 

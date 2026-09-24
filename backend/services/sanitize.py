@@ -1,6 +1,8 @@
 import re
 import unicodedata
 
+from backend.services.geo_names import normalize_country, normalize_nationality
+
 # El modelo a veces escribe la palabra "None" (o "null") como texto en vez
 # de dejar el campo vacío, y eso se guardaba como si fuera un dato real.
 NULL_STRINGS = {"none", "null", "n/a", "na", "nan", "undefined"}
@@ -91,6 +93,10 @@ def clean_extracted(data: dict, message: str) -> tuple[dict, list[str]]:
             rejected.append(field)
         elif field == "name" and not name_appears_in(str(value), message):
             cleaned[field] = None
+        elif field == "current_country":
+            cleaned[field] = normalize_country(str(value))
+        elif field == "nationality":
+            cleaned[field] = normalize_nationality(str(value))
 
     return cleaned, rejected
 
