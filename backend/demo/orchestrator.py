@@ -3,6 +3,7 @@ import time
 
 from backend.demo import repository
 from backend.demo.ai_helper import generate_followup_reply
+from backend.demo.lead_notification import notify_lead_completed
 from backend.demo.verticals import GENERIC_VERTICALS
 from backend.services.conversation_service import (
     process_message as process_inmobiliaria_message,
@@ -199,6 +200,17 @@ def process_demo_message(
             "booking_available": True,
         }
         repository.mark_completed(conversation_id)
+
+        try:
+            notify_lead_completed(
+                vertical=vertical,
+                source=conversation.get("source", source),
+                lead=lead_instance.model_dump(),
+                priority=priority_info.get("priority", "normal"),
+                notes=priority_info.get("notes"),
+            )
+        except Exception:
+            logger.exception("Fallo al avisar del lead completado (vertical=%s)", vertical)
 
     repository.save_message(conversation_id, "assistant", assistant_message)
 

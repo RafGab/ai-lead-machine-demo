@@ -16,7 +16,11 @@
     subtitle: currentScript.getAttribute("data-subtitle") || "Te ayudo a dar el primer paso",
     welcomeMessage: currentScript.getAttribute("data-welcome") || "",
     position: currentScript.getAttribute("data-position") || "right",
-    bottomOffset: currentScript.getAttribute("data-bottom") || "20"
+    bottomOffset: currentScript.getAttribute("data-bottom") || "20",
+    privacyText:
+      currentScript.getAttribute("data-privacy-text") ||
+      "🔒 Al escribir aceptas que tratemos los datos que compartas para atender tu consulta.",
+    privacyUrl: currentScript.getAttribute("data-privacy-url") || ""
   };
 
   if (!config.apiUrl || !config.vertical) {
@@ -118,6 +122,8 @@
       ".alm-input-row input:focus { border-color: " + config.color + "; }" +
       ".alm-send { border: none; border-radius: 10px; background: " + config.color + "; color: white; padding: 0 16px; cursor: pointer; font-size: 13px; }" +
       ".alm-send:disabled { opacity: 0.5; cursor: default; }" +
+      ".alm-privacy { padding: 0 14px 6px; background: white; font-size: 10.5px; line-height: 1.4; color: #6b7280; text-align: center; }" +
+      ".alm-privacy a { color: " + config.color + "; text-decoration: underline; }" +
       ".alm-footer-brand { text-align: center; font-size: 9.5px; color: #c1c5cc; padding: 5px 0 9px; }";
 
     var host = document.createElement("div");
@@ -129,6 +135,11 @@
     var styleTag = document.createElement("style");
     styleTag.textContent = styles;
     shadow.appendChild(styleTag);
+
+    var privacyLinkHtml = /^https?:\/\//i.test(config.privacyUrl)
+      ? ' <a href="' + escapeHtml(config.privacyUrl).replace(/"/g, "&quot;") +
+        '" target="_blank" rel="noopener noreferrer">Política de privacidad</a>'
+      : "";
 
     var root = document.createElement("div");
     root.className = "alm-root";
@@ -148,6 +159,7 @@
       '<input type="text" placeholder="Escribe un mensaje..." />' +
       '<button class="alm-send" type="button">Enviar</button>' +
       "</div>" +
+      '<div class="alm-privacy">' + escapeHtml(config.privacyText) + privacyLinkHtml + "</div>" +
       '<div class="alm-footer-brand">Powered by AI Lead Machine</div>' +
       "</div>";
     shadow.appendChild(root);

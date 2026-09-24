@@ -1,6 +1,7 @@
 import logging
 
 from backend.demo import repository
+from backend.demo.lead_notification import notify_appointment_booked
 from backend.demo.verticals import GENERIC_VERTICALS
 from backend.services.calendar_service import (
     CalendarNotConfigured,
@@ -115,6 +116,17 @@ def schedule_appointment(conversation_id: int, scheduled_at: str) -> dict:
         calendar_status=calendar_status,
         calendar_event_id=calendar_event_id,
     )
+
+    try:
+        notify_appointment_booked(
+            vertical=vertical,
+            source=conversation.get("source", "demo"),
+            lead=lead,
+            scheduled_at=scheduled_at,
+            calendar_status=calendar_status,
+        )
+    except Exception:
+        logger.exception("Fallo al avisar de la cita %s", appointment_id)
 
     return {
         "appointment_id": appointment_id,

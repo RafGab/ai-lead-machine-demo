@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from backend.database.database import get_connection
+from backend.services.notify import send_notification
 
 router = APIRouter()
 
@@ -46,6 +47,20 @@ def create_business_lead(request: BusinessLeadRequest):
 
     connection.commit()
     connection.close()
+
+    lines = [
+        f"Nombre: {request.name}",
+        f"Negocio: {request.business_name or '-'}",
+        f"Correo: {request.email}",
+        f"Teléfono: {request.phone or '-'}",
+        f"Rubro de interés: {request.vertical_interest or '-'}",
+        "",
+        f"Mensaje: {request.message or '-'}",
+    ]
+    send_notification(
+        f"Nuevo interesado en AI Lead Machine: {request.business_name or request.name}",
+        "\n".join(lines),
+    )
 
     return {"status": "ok"}
 

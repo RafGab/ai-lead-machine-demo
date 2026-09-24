@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from backend.database.database import get_connection
+from backend.demo.field_labels import FIELD_LABELS, PII_FIELDS
 from backend.routes.study_leads import _check_admin_key
 from backend.services.normalization import normalize_operation, normalize_property_type
 
@@ -16,29 +17,6 @@ HOUR_LABELS_ES = {
     0: "medianoche", 3: "la madrugada", 6: "la mañana temprano", 9: "la mañana",
     12: "el mediodía", 15: "la tarde", 18: "la tarde-noche", 21: "la noche",
 }
-
-# Campos que nunca se agrupan en las estadísticas por rubro: son datos
-# personales del lead, no categorías de interés.
-PII_FIELDS = {"name", "phone", "email"}
-
-# Etiquetas en español para los campos más comunes de los rubros de la
-# demo. Un campo que no esté aquí se muestra con su nombre tal cual
-# (para no bloquear rubros nuevos que se añadan después).
-FIELD_LABELS = {
-    "procedure": "trámite",
-    "current_country": "país de residencia",
-    "nationality": "nacionalidad",
-    "education_level": "nivel de estudios",
-    "contact_hours": "horario de contacto",
-    "goal": "objetivo",
-    "membership_type": "tipo de membresía",
-    "preferred_schedule": "horario preferido",
-    "room_type": "tipo de habitación",
-    "area": "área",
-    "specialty": "especialidad",
-    "current_status": "estado del piso",
-}
-
 
 class PageViewRequest(BaseModel):
     page: str
