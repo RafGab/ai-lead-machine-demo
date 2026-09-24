@@ -23,7 +23,9 @@
     privacyUrl: currentScript.getAttribute("data-privacy-url") || "",
     explicitAgentName: !!currentScript.getAttribute("data-agent-name"),
     greeting: currentScript.getAttribute("data-greeting") || "",
-    greetingDelay: currentScript.getAttribute("data-greeting-delay") || "8"
+    greetingDelay: currentScript.getAttribute("data-greeting-delay") || "8",
+    human: currentScript.getAttribute("data-human") !== "off",
+    humanLabel: currentScript.getAttribute("data-human-label") || "Hablar con una persona"
   };
 
   if (!config.apiUrl || !config.vertical) {
@@ -125,6 +127,11 @@
       ".alm-input-row input:focus { border-color: " + config.color + "; }" +
       ".alm-send { border: none; border-radius: 10px; background: " + config.color + "; color: white; padding: 0 16px; cursor: pointer; font-size: 13px; }" +
       ".alm-send:disabled { opacity: 0.5; cursor: default; }" +
+      ".alm-human { background: white; text-align: center; padding: 6px 12px 0; }" +
+      ".alm-human-btn { border: none; background: transparent; color: " + config.color + "; font-family: inherit; " +
+      "font-size: 11.5px; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 2px 4px; }" +
+      ".alm-handoff-title { font-size: 12.5px; font-weight: 700; color: #1f2937; }" +
+      ".alm-handoff-error { font-size: 11.5px; color: #b91c1c; }" +
       ".alm-teaser { position: absolute; bottom: 74px; " + side + ": 0; width: 250px; max-width: calc(100vw - 40px); display: none; " +
       "background: white; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.18); }" +
       ".alm-teaser.alm-show { display: block; animation: alm-pop 0.35s ease-out; }" +
@@ -174,6 +181,11 @@
         ? "¡Hola! Soy " + config.agentName + " 👋 ¿Te ayudo?"
         : "¡Hola! 👋 ¿Puedo ayudarte?");
 
+    var humanHtml = config.human
+      ? '<div class="alm-human"><button class="alm-human-btn" type="button">👤 ' +
+        escapeHtml(config.humanLabel) + "</button></div>"
+      : "";
+
     root.innerHTML =
       '<div class="alm-teaser" role="dialog" aria-label="Sugerencia del asistente">' +
       '<button class="alm-teaser-open" type="button">' + escapeHtml(greetingText) + "</button>" +
@@ -190,6 +202,7 @@
       "</div>" +
       '<div class="alm-messages"></div>' +
       '<div class="alm-typing" style="display:none;">Escribiendo…</div>' +
+      humanHtml +
       '<div class="alm-input-row">' +
       '<input type="text" placeholder="Escribe un mensaje..." />' +
       '<button class="alm-send" type="button">Enviar</button>' +
@@ -322,6 +335,90 @@
       row.appendChild(card);
       messagesEl.appendChild(row);
       scrollToBottom();
+    }
+
+    function renderHandoffForm() {
+      var existing = messagesEl.querySelector(".alm-handoff");
+
+      if (existing) {
+        existing.querySelector(".alm-handoff-contact").focus();
+        scrollToBottom();
+        return;
+      }
+
+      var wrap = document.createElement("div");
+      wrap.className = "alm-booking alm-handoff";
+      wrap.innerHTML =
+        '<div class="alm-handoff-title">Una persona te contactará</div>' +
+        '<input type="text" class="alm-handoff-name" placeholder="Tu nombre (opcional)" maxlength="100" />' +
+        '<input type="text" class="alm-handoff-contact" placeholder="Teléfono con prefijo o correo" maxlength="120" />' +
+        '<button type="button" class="alm-booking-btn">Que me contacten</button>' +
+        '<div class="alm-handoff-error"></div>';
+
+      messagesEl.appendChild(wrap);
+      scrollToBottom();
+
+      var contactInput = wrap.querySelector(".alm-handoff-contact");
+      var submitBtn = wrap.querySelector(".alm-booking-btn");
+      var errorEl = wrap.querySelector(".alm-handoff-error");
+      contactInput.focus();
+
+      function submit() {
+        var contact = contactInput.value.trim();
+
+        if (!contact) {
+          errorEl.textContent = "Escribe un teléfono con prefijo o un correo.";
+          return;
+        }
+
+        submitBtn.disabled = true;
+        errorEl.textContent = "";
+
+        fetch(config.apiUrl + "/demo/handoff", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vertical: config.vertical,
+            conversation_id: state.conversationId,
+            contact: contact,
+            name: wrap.querySelector(".alm-handoff-name").value.trim(),
+            source: "widget"
+          })
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              return { ok: response.ok, data: data };
+            });
+          })
+          .then(function (result) {
+            if (result.ok) {
+              wrap.remove();
+              addAssistantMessage(result.data.message, null);
+              return;
+            }
+
+            errorEl.textContent =
+              typeof result.data.detail === "string"
+                ? result.data.detail
+                : "Revisa los datos e inténtalo de nuevo.";
+            submitBtn.disabled = false;
+          })
+          .catch(function () {
+            errorEl.textContent = "No se pudo enviar. Inténtalo de nuevo.";
+            submitBtn.disabled = false;
+          });
+      }
+
+      submitBtn.addEventListener("click", submit);
+      contactInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") submit();
+      });
+    }
+
+    var humanBtn = root.querySelector(".alm-human-btn");
+
+    if (humanBtn) {
+      humanBtn.addEventListener("click", renderHandoffForm);
     }
 
     function renderBookingForm() {

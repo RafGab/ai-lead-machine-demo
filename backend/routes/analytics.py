@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from backend.database.database import get_connection
+from backend.demo import repository as demo_repository
 from backend.demo.field_labels import FIELD_LABELS, PII_FIELDS
 from backend.routes.study_leads import _check_admin_key
 from backend.services.normalization import normalize_operation, normalize_property_type
@@ -318,6 +319,13 @@ def get_insights_demo(vertical: str, key: str | None = None):
     else:
         narrative.append("Todavía no hay conversaciones reales iniciadas desde tu página.")
 
+    _, handoffs_from_site = demo_repository.count_handoffs(vertical)
+
+    if handoffs_from_site > 0:
+        narrative.append(
+            f"{handoffs_from_site} personas han pedido hablar con una persona desde tu página."
+        )
+
     fields = []
     for field_name, counter in field_counters.items():
         if not counter:
@@ -351,6 +359,7 @@ def get_insights_demo(vertical: str, key: str | None = None):
         "leads_total": leads_total,
         "leads_month": leads_month,
         "leads_from_site": leads_from_site,
+        "handoffs_from_site": handoffs_from_site,
         "fields": fields,
         "busiest_hours": [
             {"label": hour_labels[h], "count": n}

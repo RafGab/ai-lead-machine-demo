@@ -51,8 +51,90 @@ def create_tables() -> None:
         )
     """)
 
+    # Solicitudes de "hablar con una persona". Tabla propia (sin clave foránea)
+    # porque la conversación puede ser de un rubro demo o de inmobiliaria, que
+    # guarda las suyas en las tablas de producción.
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS demo_handoffs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vertical TEXT NOT NULL,
+            source TEXT NOT NULL DEFAULT 'demo',
+            conversation_id INTEGER,
+            name TEXT,
+            contact TEXT NOT NULL,
+            contact_type TEXT NOT NULL,
+            note TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     connection.commit()
     connection.close()
+
+
+def create_handoff(
+    vertical: str,
+    source: str,
+    conversation_id: int | None,
+    name: str | None,
+    contact: str,
+    contact_type: str,
+    note: str | None,
+) -> int:
+    connection = get_connection()
+
+    cursor = connection.execute(
+        """
+        INSERT INTO demo_handoffs
+        (vertical, source, conversation_id, name, contact, contact_type, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (vertical, source, conversation_id, name, contact, contact_type, note),
+    )
+
+    handoff_id = cursor.lastrowid
+
+    connection.commit()
+    connection.close()
+
+    return handoff_id
+
+
+def recent_handoff_exists(vertical: str, contact: str, minutes: int = 10) -> bool:
+    connection = get_connection()
+
+    row = connection.execute(
+        """
+        SELECT 1 FROM demo_handoffs
+        WHERE vertical = ? AND contact = ?
+        AND created_at >= datetime('now', ?)
+        LIMIT 1
+        """,
+        (vertical, contact, f"-{int(minutes)} minutes"),
+    ).fetchone()
+
+    connection.close()
+
+    return row is not None
+
+
+def count_handoffs(vertical: str) -> tuple[int, int]:
+    """Devuelve (total, los pedidos desde la web real de un cliente)."""
+
+    connection = get_connection()
+
+    row = connection.execute(
+        """
+        SELECT COUNT(*) AS total,
+               COALESCE(SUM(CASE WHEN source = 'widget' THEN 1 ELSE 0 END), 0) AS from_site
+        FROM demo_handoffs WHERE vertical = ?
+        """,
+        (vertical,),
+    ).fetchone()
+
+    connection.close()
+
+    return row["total"], row["from_site"]
 
 
 def create_conversation(vertical: str, source: str = "demo") -> int:

@@ -19,6 +19,9 @@ def _should_notify(source: str) -> bool:
 
 
 def _label_for(vertical: str) -> str:
+    if vertical == "inmobiliaria":
+        return "Inmobiliaria"
+
     module = GENERIC_VERTICALS.get(vertical)
     return module.LABEL if module else vertical
 
@@ -96,6 +99,48 @@ def notify_appointment_booked(
 
     send_notification(
         f"Cita solicitada en {label}: {name} ({scheduled_at})",
+        "\n".join(lines),
+        to=notify_email_for(vertical),
+    )
+
+
+def notify_handoff_requested(
+    vertical: str,
+    source: str,
+    name: str | None,
+    contact: str,
+    note: str | None,
+    lead: dict,
+    transcript: list[dict],
+) -> None:
+    if not _should_notify(source):
+        return
+
+    label = _label_for(vertical)
+
+    lines = [f"Alguien pidió hablar con una persona desde el chat de {label}.", ""]
+    lines.append(f"Nombre: {name or 'sin nombre'}")
+    lines.append(f"Contacto: {contact}")
+
+    if note:
+        lines.append(f"Nota: {note}")
+
+    details = [line for line in _format_lead(lead) if not line.startswith(("Nombre:", "Teléfono:", "Correo:"))]
+
+    if details:
+        lines.extend(["", "Lo que ya se sabe de su caso:"])
+        lines.extend(line for line in details if line)
+
+    if transcript:
+        lines.extend(["", "Últimos mensajes:"])
+        for message in transcript:
+            speaker = "Cliente" if message.get("role") == "user" else "Asistente"
+            lines.append(f"{speaker}: {str(message.get('content', ''))[:200]}")
+
+    lines.extend(["", "Contáctalo cuanto antes: pidió expresamente hablar con una persona."])
+
+    send_notification(
+        f"[URGENTE] {name or contact} quiere hablar con una persona ({label})",
         "\n".join(lines),
         to=notify_email_for(vertical),
     )

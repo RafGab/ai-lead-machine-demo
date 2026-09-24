@@ -132,6 +132,11 @@
   .chat-input-row input:focus { border-color: var(--vc, var(--accent)); }
   .chat-input-row button { padding: 12px 20px; border-radius: 10px; border: none; background: var(--vc, var(--accent)); color: white; font-weight: 700; font-family: inherit; cursor: pointer; }
   .chat-input-row button:disabled { opacity: 0.5; cursor: default; }
+  .human-row { padding: 8px 16px 0; background: var(--paper); text-align: center; border-top: 1px solid var(--line); }
+  .human-link { border: none; background: transparent; color: var(--vc, var(--accent)); font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 2px 6px; }
+  .human-row + .chat-input-row { border-top: none; padding-top: 6px; }
+  .handoff-title { font-size: 13px; font-weight: 700; }
+  .handoff-error { font-size: 12px; color: #b91c1c; }
   .chat-privacy { margin: 0; padding: 0 16px 12px; background: var(--paper); font-size: 11.5px; line-height: 1.4; color: var(--ink-soft); text-align: center; }
 
   /* ---------- FEATURES ---------- */
@@ -214,6 +219,7 @@
         </div>
         <div class="sub-toggle" id="sub-toggle" hidden></div>
         <div class="chat-body" id="chat-body"></div>
+        <div class="human-row"><button type="button" class="human-link" id="human-btn">👤 Hablar con una persona</button></div>
         <div class="chat-input-row">
           <input id="chat-input" type="text" placeholder="Escribe tu mensaje..." autocomplete="off">
           <button id="chat-send">Enviar</button>
@@ -471,6 +477,81 @@
       submitBooking(card);
     });
   }
+
+  function appendHandoffForm() {
+    var body = document.getElementById('chat-body');
+
+    var existing = body.querySelector('.handoff-card');
+    if (existing) {
+      existing.querySelector('.handoff-contact').focus();
+      body.scrollTop = body.scrollHeight;
+      return;
+    }
+
+    var card = document.createElement('div');
+    card.className = 'booking-card handoff-card';
+    card.innerHTML =
+      '<div class="handoff-title">Una persona te contactará</div>' +
+      '<input type="text" class="handoff-name" placeholder="Tu nombre (opcional)" maxlength="100" />' +
+      '<input type="text" class="handoff-contact" placeholder="Teléfono con prefijo o correo" maxlength="120" />' +
+      '<button type="button" class="booking-btn">Que me contacten</button>' +
+      '<div class="handoff-error"></div>';
+
+    body.appendChild(card);
+    body.scrollTop = body.scrollHeight;
+
+    var contactInput = card.querySelector('.handoff-contact');
+    var submitBtn = card.querySelector('.booking-btn');
+    var errorEl = card.querySelector('.handoff-error');
+    contactInput.focus();
+
+    function submit() {
+      var contact = contactInput.value.trim();
+
+      if (!contact) {
+        errorEl.textContent = 'Escribe un teléfono con prefijo o un correo.';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      errorEl.textContent = '';
+
+      fetch(API_URL + '/demo/handoff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vertical: state.current.key,
+          conversation_id: state.conversationId,
+          contact: contact,
+          name: card.querySelector('.handoff-name').value.trim(),
+          source: 'demo',
+        }),
+      })
+        .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+        .then(function (result) {
+          if (result.ok) {
+            card.remove();
+            appendBubble('assistant', result.data.message);
+            return;
+          }
+          errorEl.textContent = typeof result.data.detail === 'string'
+            ? result.data.detail
+            : 'Revisa los datos e inténtalo de nuevo.';
+          submitBtn.disabled = false;
+        })
+        .catch(function () {
+          errorEl.textContent = 'No se pudo enviar. Inténtalo de nuevo.';
+          submitBtn.disabled = false;
+        });
+    }
+
+    submitBtn.addEventListener('click', submit);
+    contactInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') submit();
+    });
+  }
+
+  document.getElementById('human-btn').addEventListener('click', appendHandoffForm);
 
   function submitBooking(card, overrideDateTime) {
     var scheduledAt = overrideDateTime;
