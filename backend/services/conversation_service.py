@@ -16,6 +16,8 @@ from backend.services.normalization import normalize_operation, normalize_proper
 
 logger = logging.getLogger(__name__)
 
+RETRY_FIELD = "_retry"
+
 # Detección simple por palabras clave, no por IA (para no gastar una
 # llamada extra ni añadir latencia). Solo dispara con frases que son
 # prácticamente el mensaje completo, para no confundir "ya no llevaré
@@ -77,9 +79,13 @@ def process_lead(lead: Lead) -> dict:
 
     # 4. Si no encontramos propiedades
     if not properties:
+        explanation = explain_no_matches(lead)
+
         return {
             "status": "no_results",
-            "message": explain_no_matches(lead)
+            "message": explanation["message"],
+            "options": explanation["options"],
+            "options_field": explanation["options_field"],
         }
 
     # 5. Devolver propiedades encontradas
@@ -193,7 +199,19 @@ def process_message(
 
     nothing_understood = False
 
-    if field:
+    if field == RETRY_FIELD:
+        # Botón tras "sin resultados": reabrimos el dato que el cliente
+        # quiere cambiar para que get_next_question lo vuelva a preguntar.
+        existing_lead = dict(existing_lead)
+        new_data = {}
+
+        if isinstance(value, str) and value.startswith("raise:"):
+            new_data = {"max_price": float(value.split(":", 1)[1])}
+        elif value == "city":
+            existing_lead["city"] = None
+        elif value == "budget":
+            existing_lead["max_price"] = None
+    elif field:
         # Respuesta a un botón: el valor ya es correcto y viene
         # directo del catálogo, no hace falta la IA.
         new_data = {field: value}
@@ -340,10 +358,22 @@ def process_message(
 
     elif result.get("status") == "no_results":
 
-        assistant_message = result.get(
-            "message",
-            "Ahora mismo no encontramos propiedades que coincidan con tus criterios."
-        )
+        options = result.get("options")
+        options_field = result.get("options_field")
+
+        if nothing_understood:
+            # Ya se explicó por qué no hay resultados y el cliente respondió
+            # algo ambiguo ("sí"): en vez de repetir el mismo texto, pedimos
+            # que elija.
+            assistant_message = (
+                "No estoy seguro de qué prefieres 🤔 Toca una opción o "
+                "escríbeme el nuevo presupuesto o la ciudad."
+            )
+        else:
+            assistant_message = result.get(
+                "message",
+                "Ahora mismo no encontramos propiedades que coincidan con tus criterios."
+            )
 
     elif result.get("status") == "incompatible":
 

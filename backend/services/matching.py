@@ -1,3 +1,5 @@
+import math
+
 from backend.models.lead import Lead
 from backend.database.database import get_connection
 from backend.services.normalization import normalize_operation, normalize_property_type
@@ -61,11 +63,18 @@ def get_available_cities() -> list[str]:
     return cities
 
 
-def explain_no_matches(lead: Lead) -> str:
+def explain_no_matches(lead: Lead) -> dict:
     """
     Cuando no hay resultados, explica el motivo más probable en vez
     de un mensaje genérico, para que el cliente sepa qué ajustar.
+
+    Devuelve {"message", "options", "options_field"}: las opciones son
+    botones de respuesta rápida para que un "sí" ambiguo no deje la
+    conversación atascada repitiendo la misma pregunta.
     """
+
+    retry_city = {"label": "Probar otra ciudad", "value": "city"}
+    retry_budget = {"label": "Ampliar el presupuesto", "value": "budget"}
 
     connection = get_connection()
 
@@ -79,11 +88,15 @@ def explain_no_matches(lead: Lead) -> str:
             connection.close()
             available_cities = get_available_cities()
 
-            return (
-                f"Todavía no tenemos propiedades en {lead.city}. "
-                f"Por ahora trabajamos en: {', '.join(available_cities)}. "
-                "¿Quieres probar con alguna de estas ciudades?"
-            )
+            return {
+                "message": (
+                    f"Todavía no tenemos propiedades en {lead.city}. "
+                    f"Por ahora trabajamos en: {', '.join(available_cities)}. "
+                    "¿Quieres probar con alguna de estas ciudades?"
+                ),
+                "options": [{"label": city, "value": city} for city in available_cities],
+                "options_field": "city",
+            }
 
     price_query = "SELECT MIN(price) FROM properties WHERE available = 1"
     price_parameters = []
@@ -105,13 +118,25 @@ def explain_no_matches(lead: Lead) -> str:
     connection.close()
 
     if min_price is not None and lead.max_price is not None and min_price > lead.max_price:
-        return (
-            f"Con ese presupuesto no encontramos nada en {lead.city or 'esa ciudad'}: "
-            f"lo más económico disponible ahí es de {min_price:.0f} €. "
-            "¿Quieres ampliar el presupuesto o probar otra ciudad?"
-        )
+        return {
+            "message": (
+                f"Con ese presupuesto no encontramos nada en {lead.city or 'esa ciudad'}: "
+                f"lo más económico disponible ahí es de {min_price:.0f} €. "
+                "¿Quieres ampliar el presupuesto o probar otra ciudad?"
+            ),
+            "options": [
+                {"label": f"Subir a {min_price:.0f} €", "value": f"raise:{math.ceil(min_price)}"},
+                retry_budget,
+                retry_city,
+            ],
+            "options_field": "_retry",
+        }
 
-    return (
-        "No encontramos propiedades que coincidan con todos los criterios. "
-        "¿Quieres ajustar la ciudad, el presupuesto o el tipo de inmueble?"
-    )
+    return {
+        "message": (
+            "No encontramos propiedades que coincidan con todos los criterios. "
+            "¿Quieres ajustar la ciudad o el presupuesto?"
+        ),
+        "options": [retry_city, retry_budget],
+        "options_field": "_retry",
+    }
