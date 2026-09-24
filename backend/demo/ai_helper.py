@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from backend.services.sanitize import EXTRACTION_RULES
+
 load_dotenv(override=True)
 
 
@@ -24,7 +26,7 @@ def call_ai(system_prompt: str, model_cls, message: str, conversation_history: l
 
     client = get_openai_client()
 
-    input_messages = [{"role": "system", "content": system_prompt}]
+    input_messages = [{"role": "system", "content": system_prompt + EXTRACTION_RULES}]
 
     if conversation_history:
         for item in conversation_history:
@@ -47,6 +49,16 @@ def option(label: str, value) -> dict:
     return {"label": label, "value": value}
 
 
+FOLLOWUP_REMINDER = (
+    "Recordatorio final: el registro de esta persona ya está COMPLETO. Responde solo a lo "
+    "último que dijo, sin volver a pedir datos, sin saludar como si empezara la conversación "
+    "y sin repetir tu presentación. Nunca digas que has actualizado, cambiado, cancelado o "
+    "reservado nada: no tienes esa capacidad. SOLO si pide expresamente un cambio "
+    "(teléfono, cita, datos) o cancelar, dile que se lo comunique al equipo cuando le "
+    "contacten; en cualquier otro caso responde a lo que pregunta."
+)
+
+
 def generate_followup_reply(
     context_prompt: str,
     message: str,
@@ -65,6 +77,7 @@ def generate_followup_reply(
         for item in conversation_history:
             input_messages.append({"role": item["role"], "content": item["content"]})
 
+    input_messages.append({"role": "system", "content": FOLLOWUP_REMINDER})
     input_messages.append({"role": "user", "content": message})
 
     response = client.chat.completions.create(

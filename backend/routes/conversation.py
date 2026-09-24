@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.services import conversation_repository
 from backend.services.conversation_service import process_message
@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 class ConversationMessage(BaseModel):
-    message: str
+    message: str = Field(max_length=2000)
     conversation_id: int | None = None
     field: str | None = None
     value: bool | int | float | str | None = None
@@ -18,12 +18,15 @@ class ConversationMessage(BaseModel):
 @router.post("/conversations/message")
 def conversation_message(request: ConversationMessage):
 
-    return process_message(
-        message=request.message,
-        conversation_id=request.conversation_id,
-        field=request.field,
-        value=request.value
-    )
+    try:
+        return process_message(
+            message=request.message,
+            conversation_id=request.conversation_id,
+            field=request.field,
+            value=request.value
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
 
 @router.get("/conversations")

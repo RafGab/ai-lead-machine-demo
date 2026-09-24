@@ -13,6 +13,8 @@ from backend.services.conversation_repository import (
     update_lead_data,
 )
 from backend.services.normalization import normalize_operation, normalize_property_type
+from backend.services.message_guards import PREFIXES, classify_message
+from backend.services.sanitize import clean_extracted, learned_something
 
 logger = logging.getLogger(__name__)
 
@@ -198,6 +200,7 @@ def process_message(
     # ---------------------------------------------------------
 
     nothing_understood = False
+    guard = None
 
     if field == RETRY_FIELD:
         # Botón tras "sin resultados": reabrimos el dato que el cliente
@@ -213,8 +216,12 @@ def process_message(
             existing_lead["max_price"] = None
     elif field:
         # Respuesta a un botón: el valor ya es correcto y viene
-        # directo del catálogo, no hace falta la IA.
+        # catálogo, no hace falta la IA.
         new_data = {field: value}
+    elif guard := classify_message(message, get_next_question(Lead(**existing_lead))):
+        # Mensaje sin datos que extraer (una pregunta, "ok", un intento de
+        # inyección...): no se llama a la IA, que podría rellenar algo.
+        new_data = {}
     else:
         # Un fallo puntual de red/OpenAI no debería mostrarle un error al
         # cliente si con un par de reintentos se resuelve solo.
@@ -229,13 +236,6 @@ def process_message(
                     conversation_history=conversation.get("messages", [])
                 )
                 new_data = ai_data.model_dump()
-                # Solo cuenta como "no entendido" si ya había una
-                # pregunta previa que responder; el primer "hola" de la
-                # conversación no extrae nada y es completamente normal.
-                nothing_understood = (
-                    bool(conversation.get("messages"))
-                    and not any(v is not None for v in new_data.values())
-                )
                 break
             except Exception as error:
                 last_error = error
@@ -269,6 +269,18 @@ def process_message(
                 "options": None,
                 "options_field": None
             }
+
+    new_data, _ = clean_extracted(new_data, message)
+
+    if not field:
+        # Solo cuenta como "no entendido" si ya había una pregunta previa
+        # que responder (el primer "hola" no aporta datos y es normal) y el
+        # mensaje no aporta nada NUEVO: el modelo suele devolver otra vez
+        # los datos que ya conocía, así que hay que compararlos.
+        nothing_understood = (
+            bool(conversation.get("messages"))
+            and not learned_something(existing_lead, new_data)
+        )
 
     # ---------------------------------------------------------
     # 5. Combinar información anterior + nueva
@@ -321,9 +333,23 @@ def process_message(
             # repetir la pregunta en silencio, lo reconocemos y
             # retomamos justo donde íbamos.
             assistant_message = (
-                "No estoy seguro de haber entendido eso 🤔 "
-                + assistant_message
+                PREFIXES[guard or "unclear"] + " " + assistant_message
             )
+
+    elif result.get("status") == "matches_found" and nothing_understood:
+
+        # Ya se enseñaron las opciones y el mensaje no aporta nada nuevo
+        # ("hola", "no", "¿cuánto cuesta?"): en vez de repetir la misma
+        # lista, se ofrece ajustar la búsqueda.
+        assistant_message = (
+            "Esas son las opciones que encajan con lo que me indicaste 🙂 "
+            "¿Quieres ajustar algo de la búsqueda?"
+        )
+        options = [
+            {"label": "Cambiar la ciudad", "value": "city"},
+            {"label": "Cambiar el presupuesto", "value": "budget"},
+        ]
+        options_field = RETRY_FIELD
 
     elif result.get("status") == "matches_found":
 

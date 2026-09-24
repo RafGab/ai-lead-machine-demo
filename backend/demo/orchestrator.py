@@ -3,8 +3,16 @@ import time
 
 from backend.demo import repository
 from backend.demo.ai_helper import generate_followup_reply
+from backend.demo.field_labels import FIELD_LABELS
 from backend.demo.lead_notification import notify_lead_completed
 from backend.demo.verticals import GENERIC_VERTICALS
+from backend.services.message_guards import (
+    PREFIXES,
+    SMALLTALK_REPLIES,
+    classify_message,
+    classify_smalltalk,
+)
+from backend.services.sanitize import FIELD_HINTS, clean_extracted, learned_something
 from backend.services.conversation_service import (
     process_message as process_inmobiliaria_message,
     is_closing_message,
@@ -88,12 +96,18 @@ def process_demo_message(
             "datos que no conozcas, dilo con honestidad y ofrece que el "
             "equipo se lo confirme pronto. No inventes cifras, horarios "
             "ni otros datos concretos que no tengas."
+            + _registered_data_summary(existing_data)
         )
 
+        smalltalk = classify_smalltalk(message)
+
         try:
-            assistant_message = generate_followup_reply(
-                followup_prompt, message, conversation_history=conversation.get("messages", [])
-            )
+            if smalltalk:
+                assistant_message = SMALLTALK_REPLIES[smalltalk]
+            else:
+                assistant_message = generate_followup_reply(
+                    followup_prompt, message, conversation_history=conversation.get("messages", [])
+                )
         except Exception:
             logger.exception(
                 "Fallo al generar respuesta de seguimiento post-registro (vertical=%s, conversation_id=%s)",
@@ -116,9 +130,16 @@ def process_demo_message(
         }
 
     nothing_understood = False
+    guard = None
 
     if field:
         new_data = {field: value}
+    elif guard := classify_message(
+        message, module.get_next_question(_find_model_cls(module)(**existing_data))
+    ):
+        # Mensaje sin datos que extraer (una pregunta, "ok", un intento de
+        # inyección...): no se llama a la IA, que podría rellenar algo.
+        new_data = {}
     else:
         last_error = None
         new_data = None
@@ -128,13 +149,6 @@ def process_demo_message(
             try:
                 extracted = module.extract(message, conversation_history=conversation.get("messages", []))
                 new_data = extracted.model_dump()
-                # Solo cuenta como "no entendido" si ya había una
-                # pregunta previa que responder; el primer "hola" de la
-                # conversación no extrae nada y es completamente normal.
-                nothing_understood = (
-                    bool(conversation.get("messages"))
-                    and not any(v is not None for v in new_data.values())
-                )
                 break
             except Exception as error:
                 last_error = error
@@ -160,6 +174,18 @@ def process_demo_message(
                 "options_field": None,
             }
 
+    new_data, rejected_fields = clean_extracted(new_data, message)
+
+    if not field:
+        # Solo cuenta como "no entendido" si ya había una pregunta previa
+        # que responder (el primer "hola" no aporta datos y es normal) y el
+        # mensaje no aporta nada NUEVO: el modelo suele devolver otra vez
+        # los datos que ya conocía, así que hay que compararlos.
+        nothing_understood = (
+            bool(conversation.get("messages"))
+            and not learned_something(existing_data, new_data)
+        )
+
     merged_data = merge_lead_data(existing_data, new_data)
 
     # cada módulo expone exactamente una clase de modelo; la localizamos
@@ -173,8 +199,14 @@ def process_demo_message(
 
     if next_question:
         assistant_message = next_question["text"]
-        if nothing_understood:
-            assistant_message = "No estoy seguro de haber entendido eso 🤔 " + assistant_message
+        hint = next((FIELD_HINTS[f] for f in rejected_fields if f in FIELD_HINTS), None)
+        if hint:
+            asked_again = next_question["field"] in rejected_fields
+            assistant_message = hint if asked_again else hint + " " + assistant_message
+        elif guard:
+            assistant_message = PREFIXES[guard] + " " + assistant_message
+        elif nothing_understood:
+            assistant_message = PREFIXES["unclear"] + " " + assistant_message
         options = next_question.get("options")
         options_field = next_question.get("field")
         result = {"status": "needs_information", "question": next_question}
@@ -223,6 +255,21 @@ def process_demo_message(
         "options": options,
         "options_field": options_field,
     }
+
+
+def _registered_data_summary(lead_data: dict) -> str:
+    lines = [
+        f"- {FIELD_LABELS.get(field, field)}: {value}"
+        for field, value in lead_data.items()
+        if value not in (None, "", False)
+    ]
+
+    if not lines:
+        return ""
+
+    header = "Datos ya registrados de esta persona (no se los vuelvas a pedir):"
+
+    return "\n\n" + header + "\n" + "\n".join(lines)
 
 
 def _find_model_cls(module):

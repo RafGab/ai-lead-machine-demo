@@ -6,6 +6,9 @@ PII_FIELDS = {"name", "phone", "email"}
 # demo. Un campo que no esté aquí se muestra con su nombre tal cual
 # (para no bloquear rubros nuevos que se añadan después).
 FIELD_LABELS = {
+    "name": "nombre",
+    "phone": "teléfono",
+    "email": "correo",
     "procedure": "trámite",
     "current_country": "país de residencia",
     "nationality": "nacionalidad",

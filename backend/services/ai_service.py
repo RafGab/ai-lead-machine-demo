@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel
 
+from backend.services.sanitize import EXTRACTION_RULES
+
 
 load_dotenv(override=True)
 
@@ -112,6 +114,7 @@ def extract_lead_data(
                 "MUY IMPORTANTE: interpreta las respuestas "
                 "cortas como 'sí' o 'no' teniendo en cuenta "
                 "la pregunta inmediatamente anterior."
+                + EXTRACTION_RULES
             ),
         }
     ]

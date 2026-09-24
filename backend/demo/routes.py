@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.demo.orchestrator import process_demo_message
 from backend.demo.verticals import list_verticals
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/demo")
 
 class DemoMessage(BaseModel):
     vertical: str
-    message: str
+    message: str = Field(max_length=2000)
     conversation_id: int | None = None
     field: str | None = None
     value: bool | int | float | str | None = None
