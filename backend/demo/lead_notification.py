@@ -1,7 +1,7 @@
 import os
 
 from backend.demo.field_labels import FIELD_LABELS, PII_FIELDS
-from backend.demo.verticals import GENERIC_VERTICALS
+from backend.demo.verticals import vertical_label
 from backend.services.notify import notify_email_for, send_notification
 
 
@@ -19,11 +19,7 @@ def _should_notify(source: str) -> bool:
 
 
 def _label_for(vertical: str) -> str:
-    if vertical == "inmobiliaria":
-        return "Inmobiliaria"
-
-    module = GENERIC_VERTICALS.get(vertical)
-    return module.LABEL if module else vertical
+    return vertical_label(vertical)
 
 
 def _format_lead(lead: dict) -> list[str]:

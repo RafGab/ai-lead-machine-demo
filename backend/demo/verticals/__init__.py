@@ -29,6 +29,15 @@ INMOBILIARIA_META = {
 }
 
 
+def vertical_label(key: str) -> str:
+    if key == "inmobiliaria":
+        return INMOBILIARIA_META["label"]
+
+    module = GENERIC_VERTICALS.get(key)
+
+    return module.LABEL if module else key
+
+
 def list_verticals() -> list[dict]:
     verticals = [{"key": "inmobiliaria", **INMOBILIARIA_META}]
 

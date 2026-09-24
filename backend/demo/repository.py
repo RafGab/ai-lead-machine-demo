@@ -23,6 +23,9 @@ def create_tables() -> None:
     # ("demo") de las de un widget embebido en la web real de un
     # cliente ("widget"), para no mezclar sus métricas.
     _ensure_column(connection, "demo_conversations", "source", "TEXT NOT NULL DEFAULT 'demo'")
+    # Seguimiento del lead por parte del negocio (panel de leads).
+    _ensure_column(connection, "demo_conversations", "lead_status", "TEXT NOT NULL DEFAULT 'nuevo'")
+    _ensure_column(connection, "demo_conversations", "lead_note", "TEXT")
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS demo_messages (
@@ -67,6 +70,9 @@ def create_tables() -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+
+    _ensure_column(connection, "demo_handoffs", "lead_status", "TEXT NOT NULL DEFAULT 'nuevo'")
+    _ensure_column(connection, "demo_handoffs", "lead_note", "TEXT")
 
     connection.commit()
     connection.close()

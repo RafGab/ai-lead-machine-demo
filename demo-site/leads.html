@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Lead Machine — Panel de leads</title>
+<style>
+  :root {
+    --ink: #14121f; --ink-soft: #6b6478; --paper: #fbfaff; --surface: #f3f1fb;
+    --line: #e3e0f5; --accent: #4f3ff0; --accent-dark: #372ec9; --gold: #a3792f; --green: #12b3a3;
+    --red: #ab263e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--surface); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; padding: 24px 16px; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+  .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 22px; }
+  .crumbs { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 10px; }
+  .crumbs a { color: inherit; }
+
+  .key-bar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .key-bar input { flex: 1; min-width: 220px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; background: var(--paper); }
+  button, select, textarea, input { font-family: inherit; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; background: var(--accent); color: white; font-weight: 600; cursor: pointer; font-size: 14px; }
+  .btn:hover { background: var(--accent-dark); }
+  .btn.ghost { background: var(--paper); color: var(--accent-dark); border: 1px solid var(--line); }
+  .btn:disabled { opacity: 0.55; cursor: default; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #tools { display: none; }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .filters select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); font-size: 14px; }
+  .filters label { font-size: 13px; color: var(--ink-soft); display: flex; gap: 6px; align-items: center; }
+  .filters .spacer { flex: 1; }
+
+  .counts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chip { border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft); }
+  .chip b { color: var(--ink); }
+
+  .lead { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; }
+  .lead.urgent { border-left: 4px solid var(--red); }
+  .lead.cerrado { opacity: 0.72; }
+  .lead-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+  .lead-name { font-size: 17px; font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .badge { font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 3px 9px; background: var(--surface); color: var(--ink-soft); }
+  .badge.urgent { background: color-mix(in srgb, var(--red) 12%, var(--paper)); color: var(--red); }
+  .badge.demo { background: #eee; color: #666; }
+  .status-select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); font-size: 13.5px; font-weight: 700; background: var(--paper); }
+  .status-select.nuevo { color: var(--accent-dark); }
+  .status-select.contactado { color: var(--gold); }
+  .status-select.cerrado { color: #0d8a7c; }
+
+  .contact { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0 4px; font-size: 14.5px; }
+  .contact a { color: var(--accent-dark); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+  .contact a:hover { text-decoration: underline; }
+  .when { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  .details { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .detail { font-size: 12.5px; background: var(--surface); border-radius: 8px; padding: 4px 9px; overflow-wrap: anywhere; }
+  .detail span { color: var(--ink-soft); }
+  .extra { font-size: 13.5px; margin-top: 10px; overflow-wrap: anywhere; }
+  .extra.urgent { color: var(--red); font-weight: 600; }
+
+  .note-row { display: flex; gap: 8px; margin-top: 12px; align-items: flex-start; }
+  .note-row textarea { flex: 1; min-height: 40px; resize: vertical; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13.5px; background: white; }
+  .saved { font-size: 12px; color: #0d8a7c; min-height: 16px; margin-top: 4px; }
+
+  .empty, .error { font-size: 14.5px; padding: 26px 20px; text-align: center; background: var(--paper); border: 1px dashed var(--line); border-radius: 14px; color: var(--ink-soft); }
+  .error { color: var(--red); border-color: var(--red); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumbs">
+    <a href="index.html">← Demo</a> &nbsp;·&nbsp;
+    <a href="insights.html">Panel de insights</a> &nbsp;·&nbsp;
+    <a href="admin-inmobiliaria.html">Panel de propiedades</a>
+  </p>
+  <h1>AI Lead Machine — Panel de leads</h1>
+  <p class="sub">Cada persona que dejó sus datos, una por una: contáctala, marca cómo va y anota lo que hablaron.</p>
+
+  <div class="key-bar">
+    <input id="admin-key" type="password" placeholder="Clave de administración (ADMIN_KEY)" autocomplete="off">
+    <button class="btn" id="load-btn" type="button">Ver leads</button>
+  </div>
+
+  <div id="tools">
+    <div class="filters">
+      <select id="f-vertical" aria-label="Rubro"></select>
+      <select id="f-status" aria-label="Estado">
+        <option value="">Todos los estados</option>
+        <option value="nuevo">Nuevos</option>
+        <option value="contactado">Contactados</option>
+        <option value="cerrado">Cerrados</option>
+      </select>
+      <label><input type="checkbox" id="f-demo"> Incluir pruebas de la demo</label>
+      <label><input type="checkbox" id="f-incomplete"> Incluir sin teléfono ni correo</label>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="csv-btn" type="button">Descargar CSV</button>
+    </div>
+    <div class="counts" id="counts"></div>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+  var API_URL = 'https://ai-lead-machine-backend.onrender.com';
+  var STATUS_LABELS = { nuevo: 'Nuevo', contactado: 'Contactado', cerrado: 'Cerrado' };
+  var loadedVerticals = false;
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function getKey() {
+    return document.getElementById('admin-key').value.trim();
+  }
+
+  function filterQuery() {
+    var params = new URLSearchParams();
+    params.set('key', getKey());
+    var vertical = document.getElementById('f-vertical').value;
+    var status = document.getElementById('f-status').value;
+    if (vertical) params.set('vertical', vertical);
+    if (status) params.set('status', status);
+    params.set('scope', document.getElementById('f-demo').checked ? 'all' : 'site');
+    if (document.getElementById('f-incomplete').checked) params.set('incomplete', 'true');
+    return params.toString();
+  }
+
+  function showMessage(className, text) {
+    var list = document.getElementById('list');
+    list.textContent = '';
+    list.appendChild(el('div', className, text));
+  }
+
+  function loadVerticals() {
+    if (loadedVerticals) return Promise.resolve();
+    return fetch(API_URL + '/demo/verticals')
+      .then(function (r) { return r.json(); })
+      .then(function (verticals) {
+        var select = document.getElementById('f-vertical');
+        select.appendChild(new Option('Todos los rubros', ''));
+        verticals.forEach(function (v) { select.appendChild(new Option(v.icon + ' ' + v.label, v.key)); });
+        select.appendChild(new Option('🔑 Propietarios (gestión)', 'propietarios'));
+        loadedVerticals = true;
+      })
+      .catch(function () {
+        var select = document.getElementById('f-vertical');
+        select.appendChild(new Option('Todos los rubros', ''));
+        loadedVerticals = true;
+      });
+  }
+
+  function loadLeads() {
+    var key = getKey();
+    if (!key) { showMessage('error', 'Escribe tu clave de administración.'); return; }
+
+    loadVerticals().then(function () {
+      showMessage('empty', 'Cargando…');
+
+      fetch(API_URL + '/admin/leads?' + filterQuery())
+        .then(function (r) {
+          if (r.status === 403) throw new Error('Clave de administración inválida.');
+          if (!r.ok) throw new Error('No se pudieron cargar los leads.');
+          return r.json();
+        })
+        .then(function (data) {
+          try { localStorage.setItem('alm_admin_key', key); } catch (e) {}
+          document.getElementById('tools').style.display = 'block';
+          renderCounts(data.counts);
+          renderLeads(data.leads);
+        })
+        .catch(function (error) {
+          document.getElementById('tools').style.display = 'none';
+          showMessage('error', error.message || 'No se pudo conectar con el servidor.');
+        });
+    });
+  }
+
+  function renderCounts(counts) {
+    var box = document.getElementById('counts');
+    box.textContent = '';
+    [['nuevo', 'Nuevos'], ['contactado', 'Contactados'], ['cerrado', 'Cerrados']].forEach(function (pair) {
+      var chip = el('span', 'chip');
+      chip.appendChild(el('b', '', String(counts[pair[0]])));
+      chip.appendChild(document.createTextNode(' ' + pair[1].toLowerCase()));
+      box.appendChild(chip);
+    });
+  }
+
+  function formatWhen(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function renderLeads(leads) {
+    var list = document.getElementById('list');
+    list.textContent = '';
+
+    if (!leads.length) {
+      list.appendChild(el('div', 'empty',
+        'Todavía no hay leads con estos filtros. Aparecerán aquí en cuanto alguien deje sus datos en tu web.'));
+      return;
+    }
+
+    leads.forEach(function (lead) { list.appendChild(renderLead(lead)); });
+  }
+
+  function renderLead(lead) {
+    var card = el('article', 'lead ' + lead.status + (lead.urgent ? ' urgent' : ''));
+
+    var head = el('div', 'lead-head');
+    var titleBox = el('div');
+    titleBox.appendChild(el('h3', 'lead-name', lead.name || 'Sin nombre'));
+    var badges = el('div', 'badges');
+    badges.appendChild(el('span', 'badge', lead.vertical_label));
+    if (lead.urgent) badges.appendChild(el('span', 'badge urgent', 'Pidió hablar con una persona'));
+    if (lead.source !== 'widget') badges.appendChild(el('span', 'badge demo', 'Prueba de demo'));
+    if (lead.kind === 'conversation' && !lead.completed) badges.appendChild(el('span', 'badge', 'Conversación sin terminar'));
+    titleBox.appendChild(badges);
+    head.appendChild(titleBox);
+
+    var select = el('select', 'status-select ' + lead.status);
+    select.setAttribute('aria-label', 'Estado del lead');
+    Object.keys(STATUS_LABELS).forEach(function (value) {
+      var option = new Option(STATUS_LABELS[value], value);
+      option.selected = value === lead.status;
+      select.appendChild(option);
+    });
+    head.appendChild(select);
+    card.appendChild(head);
+
+    var contact = el('div', 'contact');
+    var digits = lead.phone.replace(/[^\d+]/g, '');
+    if (digits) {
+      var tel = el('a', '', '📞 ' + lead.phone);
+      tel.href = 'tel:' + digits;
+      contact.appendChild(tel);
+      var wa = el('a', '', 'WhatsApp');
+      wa.href = 'https://wa.me/' + digits.replace(/^\+/, '');
+      wa.target = '_blank';
+      wa.rel = 'noopener';
+      contact.appendChild(wa);
+    }
+    if (/^[^@\s]+@[^@\s]+$/.test(lead.email)) {
+      var mail = el('a', '', '✉️ ' + lead.email);
+      mail.href = 'mailto:' + encodeURIComponent(lead.email).replace('%40', '@');
+      contact.appendChild(mail);
+    }
+    if (!contact.children.length) contact.appendChild(el('span', 'when', 'Todavía sin teléfono ni correo.'));
+    card.appendChild(contact);
+
+    card.appendChild(el('div', 'when', formatWhen(lead.created_at)));
+
+    if (lead.details.length) {
+      var details = el('div', 'details');
+      lead.details.forEach(function (d) {
+        var chip = el('div', 'detail');
+        chip.appendChild(el('span', '', d.label + ': '));
+        chip.appendChild(document.createTextNode(d.value));
+        details.appendChild(chip);
+      });
+      card.appendChild(details);
+    }
+
+    if (lead.appointment) {
+      card.appendChild(el('div', 'extra', '📅 Cita: ' + formatWhen(lead.appointment.scheduled_at)));
+    }
+    if (lead.handoff_note) {
+      card.appendChild(el('div', 'extra urgent', 'Mensaje: ' + lead.handoff_note));
+    }
+
+    var noteRow = el('div', 'note-row');
+    var note = el('textarea');
+    note.placeholder = 'Tus notas: qué hablaron, cuándo volver a llamar…';
+    note.value = lead.note;
+    note.maxLength = 500;
+    note.setAttribute('aria-label', 'Notas del lead');
+    var save = el('button', 'btn ghost', 'Guardar');
+    save.type = 'button';
+    noteRow.appendChild(note);
+    noteRow.appendChild(save);
+    card.appendChild(noteRow);
+
+    var saved = el('div', 'saved');
+    card.appendChild(saved);
+
+    function persist() {
+      save.disabled = true;
+      saved.textContent = '';
+
+      fetch(API_URL + '/admin/leads/' + encodeURIComponent(lead.id) + '/status?key=' + encodeURIComponent(getKey()), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: select.value, note: note.value }),
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error();
+          card.className = 'lead ' + select.value + (lead.urgent ? ' urgent' : '');
+          select.className = 'status-select ' + select.value;
+          saved.textContent = 'Guardado ✓';
+          refreshCounts();
+        })
+        .catch(function () { saved.textContent = 'No se pudo guardar. Inténtalo de nuevo.'; saved.style.color = '#ab263e'; })
+        .finally(function () { save.disabled = false; });
+    }
+
+    select.addEventListener('change', persist);
+    save.addEventListener('click', persist);
+
+    return card;
+  }
+
+  function refreshCounts() {
+    var params = new URLSearchParams(filterQuery());
+    params.delete('status');
+
+    fetch(API_URL + '/admin/leads?' + params.toString())
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderCounts(data.counts); })
+      .catch(function () {});
+  }
+
+  function downloadCsv() {
+    var button = document.getElementById('csv-btn');
+    button.disabled = true;
+
+    fetch(API_URL + '/admin/leads.csv?' + filterQuery())
+      .then(function (r) {
+        if (!r.ok) throw new Error();
+        return r.blob();
+      })
+      .then(function (blob) {
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'leads.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      })
+      .catch(function () { alert('No se pudo descargar el CSV. Inténtalo de nuevo.'); })
+      .finally(function () { button.disabled = false; });
+  }
+
+  document.getElementById('load-btn').addEventListener('click', loadLeads);
+  document.getElementById('csv-btn').addEventListener('click', downloadCsv);
+  document.getElementById('admin-key').addEventListener('keydown', function (e) { if (e.key === 'Enter') loadLeads(); });
+  ['f-vertical', 'f-status', 'f-demo', 'f-incomplete'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', loadLeads);
+  });
+
+  var savedKey = null;
+  try { savedKey = localStorage.getItem('alm_admin_key'); } catch (e) {}
+  if (savedKey) {
+    document.getElementById('admin-key').value = savedKey;
+    loadLeads();
+  }
+</script>
+</body>
+</html>
