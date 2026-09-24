@@ -136,8 +136,18 @@
     styleTag.textContent = styles;
     shadow.appendChild(styleTag);
 
-    var privacyLinkHtml = /^https?:\/\//i.test(config.privacyUrl)
-      ? ' <a href="' + escapeHtml(config.privacyUrl).replace(/"/g, "&quot;") +
+    // Acepta enlaces relativos ("privacidad.html") resolviéndolos contra la
+    // página que embebe el widget, y descarta cualquier esquema que no sea http(s).
+    var privacyHref = "";
+    try {
+      var parsedPrivacyUrl = new URL(config.privacyUrl, window.location.href);
+      if (config.privacyUrl && /^https?:$/.test(parsedPrivacyUrl.protocol)) {
+        privacyHref = parsedPrivacyUrl.href;
+      }
+    } catch (e) {}
+
+    var privacyLinkHtml = privacyHref
+      ? ' <a href="' + escapeHtml(privacyHref).replace(/"/g, "&quot;") +
         '" target="_blank" rel="noopener noreferrer">Política de privacidad</a>'
       : "";
 
