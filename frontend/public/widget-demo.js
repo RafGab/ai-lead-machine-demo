@@ -20,7 +20,10 @@
     privacyText:
       currentScript.getAttribute("data-privacy-text") ||
       "🔒 Al escribir aceptas que tratemos los datos que compartas para atender tu consulta.",
-    privacyUrl: currentScript.getAttribute("data-privacy-url") || ""
+    privacyUrl: currentScript.getAttribute("data-privacy-url") || "",
+    explicitAgentName: !!currentScript.getAttribute("data-agent-name"),
+    greeting: currentScript.getAttribute("data-greeting") || "",
+    greetingDelay: currentScript.getAttribute("data-greeting-delay") || "8"
   };
 
   if (!config.apiUrl || !config.vertical) {
@@ -122,6 +125,18 @@
       ".alm-input-row input:focus { border-color: " + config.color + "; }" +
       ".alm-send { border: none; border-radius: 10px; background: " + config.color + "; color: white; padding: 0 16px; cursor: pointer; font-size: 13px; }" +
       ".alm-send:disabled { opacity: 0.5; cursor: default; }" +
+      ".alm-teaser { position: absolute; bottom: 74px; " + side + ": 0; width: 250px; max-width: calc(100vw - 40px); display: none; " +
+      "background: white; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.18); }" +
+      ".alm-teaser.alm-show { display: block; animation: alm-pop 0.35s ease-out; }" +
+      ".alm-teaser::after { content: ''; position: absolute; bottom: -6px; " + side + ": 24px; width: 12px; height: 12px; background: white; " +
+      "border-right: 1px solid rgba(0,0,0,0.06); border-bottom: 1px solid rgba(0,0,0,0.06); transform: rotate(45deg); }" +
+      ".alm-teaser-open { display: block; width: 100%; border: none; background: transparent; text-align: left; cursor: pointer; " +
+      "font-family: inherit; font-size: 13px; line-height: 1.45; color: #1f2937; padding: 12px 30px 12px 14px; }" +
+      ".alm-teaser-close { position: absolute; top: 4px; right: 6px; width: 22px; height: 22px; border: none; background: transparent; " +
+      "color: #9ca3af; font-size: 17px; line-height: 1; cursor: pointer; border-radius: 50%; }" +
+      ".alm-teaser-close:hover { color: #4b5563; background: rgba(0,0,0,0.05); }" +
+      "@keyframes alm-pop { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }" +
+      "@media (prefers-reduced-motion: reduce) { .alm-teaser.alm-show { animation: none; } }" +
       ".alm-privacy { padding: 0 14px 6px; background: white; font-size: 10.5px; line-height: 1.4; color: #6b7280; text-align: center; }" +
       ".alm-privacy a { color: " + config.color + "; text-decoration: underline; }" +
       ".alm-footer-brand { text-align: center; font-size: 9.5px; color: #c1c5cc; padding: 5px 0 9px; }";
@@ -153,7 +168,17 @@
 
     var root = document.createElement("div");
     root.className = "alm-root";
+    var greetingText =
+      config.greeting ||
+      (config.explicitAgentName
+        ? "¡Hola! Soy " + config.agentName + " 👋 ¿Te ayudo?"
+        : "¡Hola! 👋 ¿Puedo ayudarte?");
+
     root.innerHTML =
+      '<div class="alm-teaser" role="dialog" aria-label="Sugerencia del asistente">' +
+      '<button class="alm-teaser-open" type="button">' + escapeHtml(greetingText) + "</button>" +
+      '<button class="alm-teaser-close" type="button" aria-label="Cerrar sugerencia">×</button>' +
+      "</div>" +
       '<button class="alm-bubble" type="button" aria-label="Abrir chat">' +
       '<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.61 1.28 4.95 3.32 6.6-.13 1.13-.5 2.5-1.32 3.4 1.53 0 3.3-.6 4.5-1.4 1.1.4 2.3.6 3.5.6 5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>' +
       "</button>" +
@@ -188,9 +213,49 @@
       return div.innerHTML;
     }
 
+    var teaser = root.querySelector(".alm-teaser");
+    var greetingKey = "alm-greeting-" + config.vertical;
+
+    function storageGet(key) {
+      try { return window.sessionStorage.getItem(key); } catch (e) { return null; }
+    }
+
+    function storageSet(key, value) {
+      try { window.sessionStorage.setItem(key, value); } catch (e) {}
+    }
+
+    function hideTeaser() {
+      teaser.classList.remove("alm-show");
+    }
+
+    // Saludo proactivo: una burbuja junto al botón tras unos segundos, una
+    // sola vez por sesión, y nunca si el visitante ya abrió el chat.
+    var greetingDelaySeconds = parseFloat(config.greetingDelay);
+
+    if (greetingDelaySeconds > 0 && !storageGet(greetingKey)) {
+      window.setTimeout(function () {
+        if (state.open || storageGet(greetingKey)) return;
+        storageSet(greetingKey, "1");
+        teaser.classList.add("alm-show");
+      }, greetingDelaySeconds * 1000);
+    }
+
+    root.querySelector(".alm-teaser-close").addEventListener("click", function () {
+      storageSet(greetingKey, "1");
+      hideTeaser();
+    });
+
+    root.querySelector(".alm-teaser-open").addEventListener("click", function () {
+      toggle(true);
+    });
+
     function toggle(open) {
       state.open = open === undefined ? !state.open : open;
       panel.classList.toggle("alm-open", state.open);
+      if (state.open) {
+        storageSet(greetingKey, "1");
+        hideTeaser();
+      }
       if (state.open && messagesEl.children.length === 0) {
         addAssistantMessage(config.welcomeMessage, null);
       }
