@@ -45,6 +45,8 @@
   .brand { display: flex; align-items: center; gap: 10px; font-family: "Sora", sans-serif; font-weight: 700; font-size: 17px; }
   .brand-mark { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: block; object-fit: cover; }
   .nav a.back { font-size: 13.5px; font-weight: 600; color: var(--ink-soft); }
+  .nav .brand { white-space: nowrap; }
+  @media (max-width: 520px) { .nav a.back { font-size: 12.5px; } .nav-row { gap: 12px; } }
 
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 13px 26px; font-size: 14px; font-weight: 700; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; font-family: inherit; }
   .btn-primary { background: var(--accent); color: white; box-shadow: var(--shadow-sm); }
@@ -114,6 +116,37 @@
   .form-status.ok { color: var(--teal-dark); }
   .form-status.err { color: #c0392b; }
 
+  .pricing-intro { margin-top: 14px; max-width: 64ch; color: var(--ink-soft); font-size: 15.5px; }
+  .pricing-controls { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 14px; }
+  .seg { display: inline-flex; flex-wrap: wrap; padding: 4px; gap: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+  .seg button { border: none; background: transparent; border-radius: 999px; padding: 9px 16px; font-family: inherit; font-size: 13.5px; font-weight: 700; color: var(--ink-soft); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: white; box-shadow: var(--shadow-sm); }
+  @media (max-width: 520px) { .seg { width: 100%; border-radius: 18px; } .seg button { flex: 1 1 auto; } }
+  .seg button:focus-visible, .plan-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .plans { margin-top: 28px; display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 900px) { .plans { grid-template-columns: repeat(3, 1fr); } }
+  .plan { background: var(--paper); border: 1px solid var(--line); border-radius: 20px; padding: 28px 24px; display: flex; flex-direction: column; }
+  .plan-tag { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-dark); }
+  .plan h3 { font-size: 22px; margin-top: 6px; }
+  .plan-for { margin-top: 8px; font-size: 13.5px; color: var(--ink-soft); }
+  .plan-price { margin-top: 18px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .plan-price .amount { font-family: "Sora", sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .plan-price .per { font-size: 14px; color: var(--ink-soft); font-weight: 600; }
+  .plan-setup { margin-top: 6px; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .plan-total { margin-top: 4px; font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .plan-save { margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--teal-dark); background: color-mix(in srgb, var(--teal) 10%, var(--paper)); border-radius: 10px; padding: 7px 10px; font-variant-numeric: tabular-nums; }
+  .plan-list { margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+  .plan-list li { list-style: none; display: flex; gap: 10px; font-size: 13.5px; }
+  .plan-list li::before { content: "✓"; color: var(--teal-dark); font-weight: 800; flex-shrink: 0; }
+  .plan-list li.soon { color: var(--ink-soft); }
+  .plan-list li.soon::before { content: "◌"; color: var(--gold); }
+  .plan-list li.soon span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold); margin-left: 6px; }
+  .plan-cta-wrap { margin-top: auto; padding-top: 22px; }
+  .plan-cta { width: 100%; }
+  .pricing-notes { margin: 26px 0 0; padding: 0; display: grid; gap: 8px; }
+  .pricing-notes li { list-style: none; font-size: 13px; color: var(--ink-soft); padding-left: 16px; position: relative; }
+  .pricing-notes li::before { content: "•"; position: absolute; left: 0; color: var(--accent); }
+
   footer { padding-block: 36px; border-top: 1px solid var(--line); }
   .footer-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
   .fine { font-size: 12.5px; color: var(--ink-soft); }
@@ -130,7 +163,10 @@
 <div class="nav">
   <div class="wrap nav-row">
     <div class="brand"><img class="brand-mark" src="assets/logo-mark.png" alt="AI Lead Machine"> AI Lead Machine</div>
-    <a class="back" href="index.html">← Ver la demo en vivo</a>
+    <div style="display:flex; gap:22px; align-items:center;">
+      <a class="back" href="#precios">Precios</a>
+      <a class="back" href="index.html">← Ver la demo en vivo</a>
+    </div>
   </div>
 </div>
 
@@ -258,6 +294,29 @@
   </div>
 </section>
 
+<section id="precios">
+  <div class="wrap">
+    <span class="eyebrow">Precios</span>
+    <h2 style="margin-top:14px; font-size: clamp(24px, 3vw, 32px);">Planes claros, según el tamaño de tu negocio</h2>
+    <p class="pricing-intro">Pagas una instalación única y una cuota mensual. Con contrato de 12 meses la tarifa es más baja, y puedes cambiar de plan cuando tu volumen crezca.</p>
+
+    <div class="pricing-controls">
+      <div class="seg" role="group" aria-label="País">
+        <button type="button" data-country="ES" aria-pressed="true">España · €</button>
+        <button type="button" data-country="CO" aria-pressed="false">Colombia · COP</button>
+      </div>
+      <div class="seg" role="group" aria-label="Duración del contrato">
+        <button type="button" data-term="6" aria-pressed="false">Contrato de 6 meses</button>
+        <button type="button" data-term="12" aria-pressed="true">12 meses · tarifa preferencial</button>
+      </div>
+    </div>
+
+    <div class="plans" id="plans" aria-live="polite"></div>
+    <noscript><p class="pricing-intro">Activa JavaScript para ver los planes, o escríbenos y te los enviamos.</p></noscript>
+    <ul class="pricing-notes" id="pricing-notes"></ul>
+  </div>
+</section>
+
 <section class="band" id="form">
   <div class="wrap">
     <span class="eyebrow">Hablemos de tu negocio</span>
@@ -342,6 +401,187 @@
         submitBtn.disabled = false;
       });
   });
+
+  var PRICING = {
+    ES: {
+      name: 'España',
+      terms: {
+        6:  [{ setup: 2800, monthly: 190 }, { setup: 8200, monthly: 550 }, { setup: 19000, monthly: 1500 }],
+        12: [{ setup: 2500, monthly: 165 }, { setup: 7200, monthly: 490 }, { setup: 16500, monthly: 1300 }],
+      },
+      notes: ['Precios en euros, sin IVA (21 %).'],
+    },
+    CO: {
+      name: 'Colombia',
+      terms: {
+        6:  [{ setup: 6500000, monthly: 850000 }, { setup: 16000000, monthly: 2600000 }, { setup: 35000000, monthly: 5500000 }],
+        12: [{ setup: 5800000, monthly: 750000 }, { setup: 14000000, monthly: 2300000 }, { setup: 30000000, monthly: 4800000 }],
+      },
+      notes: ['Precios en pesos colombianos (COP). La aplicación del IVA (19 %) se valida según tu régimen tributario y el del prestador.'],
+    },
+  };
+
+  var TIERS = [
+    {
+      tag: 'Pequeña empresa', name: 'Esencial',
+      forWho: 'Hasta unas 500 conversaciones al mes, un solo canal y sin integraciones a otros sistemas.',
+      features: [
+        'Página web corporativa de 5 a 8 páginas',
+        'Agente de IA en tu web, 24/7: atiende, cualifica y filtra',
+        'Agenda citas en tu Google Calendar',
+        'Aviso por correo con cada lead nuevo',
+        'Panel de leads con estados, notas y exportación a CSV',
+        'Botón «hablar con una persona» y saludo proactivo',
+      ],
+      soon: ['WhatsApp'],
+    },
+    {
+      tag: 'Mediana empresa', name: 'Crecimiento',
+      forWho: 'Varios canales, agenda o CRM conectados, y varias ubicaciones o líneas de negocio.',
+      features: [
+        'Web a medida de 10 a 15 páginas (multiidioma opcional)',
+        'Todo lo del plan Esencial',
+        'Cualificación y filtrado avanzado con las reglas de tu negocio',
+        'Panel de estadísticas: volumen, horarios de mayor demanda y motivos de consulta',
+      ],
+      soon: ['WhatsApp, Instagram y agente de voz para llamadas'],
+    },
+    {
+      tag: 'Gran empresa', name: 'Empresa',
+      forWho: 'Alto volumen de conversaciones, integración con tu CRM o ERP, varios idiomas o países.',
+      features: [
+        'Sitio corporativo avanzado de 25+ páginas, multiidioma',
+        'Todo lo del plan Crecimiento',
+        'Integraciones con tu CRM o ERP, a medida',
+        'Estadísticas avanzadas y soporte prioritario con SLA',
+      ],
+      soon: ['Chat y voz multicanal'],
+    },
+  ];
+
+  var pricingState = {
+    country: (/^es-CO/i.test(navigator.language || '') || Intl.DateTimeFormat().resolvedOptions().timeZone === 'America/Bogota') ? 'CO' : 'ES',
+    term: 12,
+  };
+
+  function money(amount, country) {
+    var digits = String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return country === 'CO' ? '$' + digits + ' COP' : digits + ' €';
+  }
+
+  function planLine(tier, prices, state) {
+    return 'Plan ' + tier.name + ' · ' + PRICING[state.country].name + ' · contrato de ' + state.term + ' meses (' +
+      money(prices.setup, state.country) + ' de instalación + ' + money(prices.monthly, state.country) + '/mes)';
+  }
+
+  function renderPricing() {
+    var data = PRICING[pricingState.country];
+    var container = document.getElementById('plans');
+    container.textContent = '';
+
+    TIERS.forEach(function (tier, index) {
+      var prices = data.terms[pricingState.term][index];
+      var six = data.terms[6][index];
+      var total = prices.setup + prices.monthly * pricingState.term;
+
+      var card = document.createElement('article');
+      card.className = 'plan';
+
+      function add(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        card.appendChild(node);
+        return node;
+      }
+
+      add('div', 'plan-tag', tier.tag);
+      add('h3', '', tier.name);
+      add('p', 'plan-for', tier.forWho);
+
+      var price = add('div', 'plan-price');
+      var amount = document.createElement('span');
+      amount.className = 'amount';
+      amount.textContent = money(prices.monthly, pricingState.country);
+      var per = document.createElement('span');
+      per.className = 'per';
+      per.textContent = '/ mes';
+      price.appendChild(amount);
+      price.appendChild(per);
+
+      add('div', 'plan-setup', '+ ' + money(prices.setup, pricingState.country) + ' de instalación (pago único)');
+      add('div', 'plan-total', 'Total del contrato de ' + pricingState.term + ' meses: ' + money(total, pricingState.country));
+
+      if (pricingState.term === 12) {
+        add('div', 'plan-save', 'Ahorras ' + money(six.monthly - prices.monthly, pricingState.country) + ' al mes y ' +
+          money(six.setup - prices.setup, pricingState.country) + ' de instalación frente al contrato de 6 meses');
+      }
+
+      var list = add('ul', 'plan-list');
+      tier.features.forEach(function (text) {
+        var li = document.createElement('li');
+        li.textContent = text;
+        list.appendChild(li);
+      });
+      tier.soon.forEach(function (text) {
+        var li = document.createElement('li');
+        li.className = 'soon';
+        var line = document.createElement('div');
+        line.appendChild(document.createTextNode(text));
+        var badge = document.createElement('span');
+        badge.textContent = 'en desarrollo';
+        line.appendChild(badge);
+        li.appendChild(line);
+        list.appendChild(li);
+      });
+
+      var ctaWrap = add('div', 'plan-cta-wrap');
+      var cta = document.createElement('button');
+      cta.type = 'button';
+      cta.className = 'btn btn-ghost plan-cta';
+      cta.textContent = 'Quiero el plan ' + tier.name;
+      cta.addEventListener('click', function () { choosePlan(planLine(tier, prices, pricingState)); });
+      ctaWrap.appendChild(cta);
+
+      container.appendChild(card);
+    });
+
+    var notes = document.getElementById('pricing-notes');
+    notes.textContent = '';
+    data.notes.concat([
+      'Instalación: 50 % al firmar y 50 % al poner en marcha. La cuota mensual se factura por adelantado desde el primer mes.',
+      'Los costes de mensajería de WhatsApp y de llamadas de voz, cuando estén disponibles, se facturan según el uso real si superan el volumen previsto en tu plan.',
+      'Puedes subir de plan o añadir idiomas y canales cuando lo necesites.',
+      'Precios válidos durante 30 días y sujetos a ajuste si cambia el alcance acordado.',
+    ]).forEach(function (text) {
+      var li = document.createElement('li');
+      li.textContent = text;
+      notes.appendChild(li);
+    });
+
+    document.querySelectorAll('[data-country]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-country') === pricingState.country));
+    });
+    document.querySelectorAll('[data-term]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-term')) === pricingState.term));
+    });
+  }
+
+  function choosePlan(line) {
+    var message = document.getElementById('f-message');
+    var others = message.value.split('\n').filter(function (l) { return l.indexOf('Plan ') !== 0; }).join('\n').trim();
+    message.value = line + (others ? '\n' + others : '');
+    document.getElementById('form').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('f-name').focus({ preventScroll: true });
+  }
+
+  document.querySelectorAll('[data-country]').forEach(function (b) {
+    b.addEventListener('click', function () { pricingState.country = b.getAttribute('data-country'); renderPricing(); });
+  });
+  document.querySelectorAll('[data-term]').forEach(function (b) {
+    b.addEventListener('click', function () { pricingState.term = Number(b.getAttribute('data-term')); renderPricing(); });
+  });
+  renderPricing();
 
   fetch(API_URL + '/analytics/pageview', {
     method: 'POST',
