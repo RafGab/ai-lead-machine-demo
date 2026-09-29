@@ -359,7 +359,14 @@
       .then(function (verticals) {
         state.verticals = verticals;
         renderVerticalList();
-        selectVertical(verticals[0].key);
+
+        var requested = new URLSearchParams(location.search).get('rubro');
+        var match = verticals.find(function (v) { return v.key === requested; });
+        selectVertical(match ? match.key : verticals[0].key);
+
+        if (match) {
+          document.querySelector('.chat-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       })
       .catch(function () {
         document.getElementById('chat-title').textContent = 'No se pudo conectar con el servidor de demo.';
