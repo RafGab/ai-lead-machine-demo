@@ -3,6 +3,7 @@ import os
 import smtplib
 import threading
 from email.message import EmailMessage
+from email.utils import formataddr
 
 logger = logging.getLogger(__name__)
 
@@ -61,3 +62,48 @@ def send_notification(subject: str, body: str, to: str | None = None) -> bool:
 
     threading.Thread(target=_send, args=(subject, body, recipient), daemon=True).start()
     return True
+
+
+def smtp_configured() -> bool:
+    return bool(os.getenv("SMTP_USER") and os.getenv("SMTP_PASSWORD"))
+
+
+def send_email(
+    subject: str,
+    body: str,
+    to: str,
+    reply_to: str | None = None,
+    from_name: str | None = None,
+) -> bool:
+    """
+    Envío síncrono (devuelve True solo si Gmail aceptó el mensaje). Es para
+    tareas en segundo plano, como los recordatorios y el seguimiento, que
+    necesitan saber si el correo salió para no repetirlo ni darlo por enviado.
+    A diferencia de send_notification, no lanza un hilo por mensaje.
+    """
+
+    if not smtp_configured() or not to:
+        return False
+
+    smtp_user = os.getenv("SMTP_USER")
+
+    try:
+        message = EmailMessage()
+        message["Subject"] = " ".join(subject.split())
+        message["From"] = formataddr((" ".join(from_name.split()), smtp_user)) if from_name else smtp_user
+        message["To"] = to
+
+        if reply_to:
+            message["Reply-To"] = reply_to
+
+        message.set_content(body)
+
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as server:
+            server.starttls()
+            server.login(smtp_user, os.getenv("SMTP_PASSWORD"))
+            server.send_message(message)
+
+        return True
+    except Exception:
+        logger.exception("No se pudo enviar el correo a un cliente (asunto=%r)", subject)
+        return False

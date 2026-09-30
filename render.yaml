@@ -18,6 +18,13 @@ services:
         sync: false
       - key: DATABASE_PATH
         value: /data/ai_lead_machine.db
+      # Recordatorios de cita y seguimiento automático (apagados por defecto).
+      - key: REMINDERS_ENABLED
+        value: "0"
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: SITE_URL
+        sync: false
     disk:
       name: data
       mountPath: /data

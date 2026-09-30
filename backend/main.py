@@ -16,6 +16,8 @@ from backend.routes.business_leads import router as business_leads_router
 from backend.routes.admin_leads import router as admin_leads_router
 from backend.demo.routes import router as demo_router
 from backend.demo.repository import create_tables as create_demo_tables
+from backend.demo.reminders import create_tables as create_reminder_tables, start_scheduler
+from backend.demo.reminders_routes import router as reminders_router
 from backend.database.database import create_tables
 from backend.database.seed import seed_if_empty
 
@@ -27,6 +29,7 @@ app.mount("/properties", StaticFiles(directory="frontend/public/properties"), na
 
 create_tables()  # Create tables if they don't exist
 create_demo_tables()  # Tablas aisladas para la demo comercial multi-rubro
+create_reminder_tables()  # Recordatorios y seguimiento (apagados salvo REMINDERS_ENABLED)
 seed_if_empty()  # Catálogo de ejemplo solo la primera vez (no pisa datos reales)
 
 app.add_middleware(
@@ -76,3 +79,6 @@ app.include_router(analytics_router)
 app.include_router(business_leads_router)
 app.include_router(admin_leads_router)
 app.include_router(demo_router)
+app.include_router(reminders_router)
+
+start_scheduler()  # No hace nada si REMINDERS_ENABLED no está activo
