@@ -439,15 +439,17 @@ def _due_followups(connection, now: datetime, since: datetime) -> list[dict]:
 
 # ------------------------------------------------------------------- ejecución
 
-def _claim(connection, table: str, key_column: str, key: int, kind_column: str, kinds: list) -> list | None:
+def _claim(connection, table: str, key_column: str, key: int, kind_column: str, kinds: list, now: datetime) -> list | None:
     """
     Reserva el envío antes de hacerlo. Devuelve None si otro proceso (o una
     ejecución anterior) ya lo reservó; si no, devuelve lo que reservó ahora,
     para poder liberar exactamente eso si el envío falla.
     """
 
+    sent_at = now.astimezone(UTC).strftime(DB_TIME)
     cursor = connection.execute(
-        f"INSERT OR IGNORE INTO {table} ({key_column}, {kind_column}) VALUES (?, ?)", (key, kinds[0])
+        f"INSERT OR IGNORE INTO {table} ({key_column}, {kind_column}, sent_at) VALUES (?, ?, ?)",
+        (key, kinds[0], sent_at),
     )
 
     if cursor.rowcount != 1:
@@ -458,7 +460,8 @@ def _claim(connection, table: str, key_column: str, key: int, kind_column: str, 
 
     for extra in kinds[1:]:
         cursor = connection.execute(
-            f"INSERT OR IGNORE INTO {table} ({key_column}, {kind_column}) VALUES (?, ?)", (key, extra)
+            f"INSERT OR IGNORE INTO {table} ({key_column}, {kind_column}, sent_at) VALUES (?, ?, ?)",
+            (key, extra, sent_at),
         )
 
         if cursor.rowcount == 1:
@@ -504,7 +507,7 @@ def run_once(now: datetime | None = None, dry_run: bool = False) -> dict:
                 continue
 
             taken = _claim(
-                connection, "demo_reminders_sent", "appointment_id", item["appointment_id"], "kind", item["claim_kinds"]
+                connection, "demo_reminders_sent", "appointment_id", item["appointment_id"], "kind", item["claim_kinds"], now
             )
 
             if taken is None:
@@ -525,7 +528,7 @@ def run_once(now: datetime | None = None, dry_run: bool = False) -> dict:
                 continue
 
             taken = _claim(
-                connection, "demo_followups_sent", "conversation_id", item["conversation_id"], "step", [item["step"]]
+                connection, "demo_followups_sent", "conversation_id", item["conversation_id"], "step", [item["step"]], now
             )
 
             if taken is None:

@@ -157,3 +157,33 @@ def test_unknown_vertical_and_conversation_are_rejected_with_400(client):
 
     assert unknown_vertical.status_code == 400
     assert unknown_conversation.status_code == 400
+
+
+def test_reclamaciones_bank_case_asks_entity_and_documents(chat):
+    conversation = chat("reclamaciones")
+    conversation.send("hola")
+    conversation.send("Ana", field="name", value="Ana")
+    reply = conversation.send("revolving", field="case_type", value="revolving")
+    assert reply["result"]["question"]["field"] == "entity"
+
+    reply = conversation.send("Banco de ejemplo", field="entity", value="Banco de ejemplo")
+    assert reply["result"]["question"]["field"] == "has_documents"
+
+
+def test_reclamaciones_labor_case_skips_bank_questions(chat):
+    conversation = chat("reclamaciones")
+    conversation.send("hola")
+    conversation.send("Ana", field="name", value="Ana")
+    reply = conversation.send("laboral", field="case_type", value="laboral")
+
+    assert reply["result"]["question"]["field"] == "case_summary"
+
+
+def test_reclamaciones_deadline_sets_priority_and_missing_documents_are_noted(chat):
+    conversation = chat("reclamaciones")
+    reply = conversation.complete(overrides={
+        "case_type": "revolving", "has_documents": "no", "has_deadline": True,
+    })
+
+    assert reply["result"]["priority"] == "alta"
+    assert "Documentación incompleta" in reply["assistant_message"]

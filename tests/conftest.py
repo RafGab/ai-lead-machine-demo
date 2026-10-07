@@ -31,7 +31,7 @@ OPEN_ANSWERS = {
     "case_summary": "despido improcedente", "deadline_date": "2026-10-20",
     "check_in_date": "2026-11-01", "check_out_date": "2026-11-05", "special_request": "cuna",
     "address": "calle Mayor", "size_m2": 80, "current_country": "Perú", "nationality": "peruana",
-    "max_price": 100000,
+    "max_price": 100000, "entity": "Banco de ejemplo",
 }
 
 
