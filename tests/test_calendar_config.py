@@ -53,3 +53,25 @@ def test_missing_calendar_raises_a_clear_error_naming_the_vertical():
         calendar.create_event("Cita", "desc", "2026-10-05T11:00:00", vertical="extranjeria")
 
     assert "GOOGLE_CALENDAR_ID_EXTRANJERIA" in str(error.value)
+
+
+def test_scopes_allow_checking_availability_and_creating_events():
+    from backend.services import calendar_service
+
+    assert "https://www.googleapis.com/auth/calendar.events" in calendar_service.SCOPES
+    assert "https://www.googleapis.com/auth/calendar.freebusy" in calendar_service.SCOPES
+
+
+def test_google_error_body_is_logged(caplog):
+    import httpx
+    import pytest
+
+    from backend.services import calendar_service
+
+    request = httpx.Request("POST", "https://www.googleapis.com/calendar/v3/freeBusy")
+    response = httpx.Response(403, request=request, text='{"error":{"message":"Insufficient Permission"}}')
+
+    with caplog.at_level("ERROR"), pytest.raises(httpx.HTTPStatusError):
+        calendar_service._raise_for_google_error(response)
+
+    assert "Insufficient Permission" in caplog.text
