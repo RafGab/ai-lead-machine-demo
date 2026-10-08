@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta
 
@@ -5,7 +6,15 @@ import httpx
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import service_account
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+logger = logging.getLogger(__name__)
+
+# calendar.events crea los eventos; calendar.freebusy permite consultar la
+# disponibilidad (freeBusy). Sin el segundo, Google responde 403 al comprobar
+# si un hueco está libre y la cita no llega a agendarse.
+SCOPES = [
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.freebusy",
+]
 VISIT_DURATION = timedelta(minutes=30)
 
 
@@ -73,6 +82,18 @@ def _calendar_not_configured_message(vertical: str | None) -> str:
     return "GOOGLE_CALENDAR_ID no está configurado en el archivo .env."
 
 
+def _raise_for_google_error(response: httpx.Response) -> None:
+    """Como raise_for_status, pero deja en el log el motivo que da Google."""
+
+    if response.is_error:
+        logger.error(
+            "Google Calendar respondió %s en %s: %s",
+            response.status_code, response.request.url.path, response.text[:500],
+        )
+
+    response.raise_for_status()
+
+
 def _post_calendar_event(
     calendar_id: str,
     summary: str,
@@ -101,7 +122,7 @@ def _post_calendar_event(
         json=event_body,
         timeout=10,
     )
-    response.raise_for_status()
+    _raise_for_google_error(response)
 
     return response.json()["id"]
 
@@ -250,7 +271,7 @@ def _get_busy_periods(
         },
         timeout=10,
     )
-    response.raise_for_status()
+    _raise_for_google_error(response)
 
     busy_data = response.json()["calendars"][calendar_id].get("busy", [])
 
