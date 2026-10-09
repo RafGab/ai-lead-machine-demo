@@ -75,3 +75,97 @@ def test_google_error_body_is_logged(caplog):
         calendar_service._raise_for_google_error(response)
 
     assert "Insufficient Permission" in caplog.text
+
+
+def _fake_freebusy(monkeypatch, busy, sent):
+    """Sustituye la llamada a Google: guarda lo enviado y devuelve `busy`."""
+    import httpx
+
+    monkeypatch.setenv("GOOGLE_CALENDAR_ID_DESPACHO", "despacho@example.com")
+    monkeypatch.delenv("GOOGLE_CALENDAR_TIMEZONE", raising=False)
+    monkeypatch.delenv("BUSINESS_HOURS_START_DESPACHO", raising=False)
+    monkeypatch.delenv("BUSINESS_HOURS_END_DESPACHO", raising=False)
+    monkeypatch.delenv("BUSINESS_DAYS_DESPACHO", raising=False)
+    monkeypatch.setattr(calendar, "BUSINESS_HOURS_START", 10)
+    monkeypatch.setattr(calendar, "BUSINESS_HOURS_END", 19)
+    monkeypatch.setattr(calendar, "BUSINESS_DAYS", {0, 1, 2, 3, 4})
+    monkeypatch.setattr(calendar, "_get_access_token", lambda: "token")
+
+    def fake_post(url, headers=None, json=None, timeout=None, **kwargs):
+        sent.update(json)
+        request = httpx.Request("POST", url)
+        body = {"calendars": {"despacho@example.com": {"busy": busy}}}
+        return httpx.Response(200, request=request, json=body)
+
+    monkeypatch.setattr(calendar.httpx, "post", fake_post)
+
+
+def test_freebusy_request_carries_the_calendars_time_zone(monkeypatch):
+    # Regresión: la cita llega como "2026-10-15T10:00:00" (sin zona) y Google
+    # respondía 400 Bad Request porque freeBusy exige zona horaria.
+    sent = {}
+    _fake_freebusy(monkeypatch, [], sent)
+
+    assert calendar.is_slot_available("2026-10-15T10:00:00", vertical="despacho") is True
+
+    assert sent["timeMin"] == "2026-10-15T10:00:00+02:00"
+    assert sent["timeMax"] == "2026-10-15T10:30:00+02:00"
+    assert sent["timeZone"] == "Europe/Madrid"
+
+
+def test_freebusy_uses_winter_offset_after_the_clock_change(monkeypatch):
+    sent = {}
+    _fake_freebusy(monkeypatch, [], sent)
+
+    calendar.is_slot_available("2026-11-12T10:00:00", vertical="despacho")
+
+    assert sent["timeMin"] == "2026-11-12T10:00:00+01:00"
+
+
+def test_freebusy_respects_the_configured_time_zone(monkeypatch):
+    sent = {}
+    _fake_freebusy(monkeypatch, [], sent)
+    monkeypatch.setenv("GOOGLE_CALENDAR_TIMEZONE", "America/Bogota")
+
+    calendar.is_slot_available("2026-10-15T10:00:00", vertical="despacho")
+
+    assert sent["timeMin"] == "2026-10-15T10:00:00-05:00"
+
+
+@pytest.mark.parametrize("busy_start,busy_end", [
+    ("2026-10-15T10:00:00+02:00", "2026-10-15T10:30:00+02:00"),  # en la zona del calendario
+    ("2026-10-15T08:00:00Z", "2026-10-15T08:30:00Z"),            # misma hora en UTC
+])
+def test_busy_slot_is_reported_unavailable_without_mixing_naive_and_aware(
+    monkeypatch, busy_start, busy_end
+):
+    sent = {}
+    _fake_freebusy(monkeypatch, [{"start": busy_start, "end": busy_end}], sent)
+
+    assert calendar.is_slot_available("2026-10-15T10:00:00", vertical="despacho") is False
+    assert calendar.is_slot_available("2026-10-15T11:00:00", vertical="despacho") is True
+
+
+def test_alternative_slots_skip_busy_periods_and_stay_in_local_time(monkeypatch):
+    sent = {}
+    busy = [{"start": "2026-10-15T08:00:00Z", "end": "2026-10-15T09:00:00Z"}]  # 10:00-11:00 Madrid
+    _fake_freebusy(monkeypatch, busy, sent)
+
+    slots = calendar.suggest_alternative_slots(
+        "2026-10-15T10:00:00", count=3, vertical="despacho"
+    )
+
+    assert slots == [
+        "2026-10-15T11:00:00",
+        "2026-10-15T11:30:00",
+        "2026-10-15T12:00:00",
+    ]
+    assert sent["timeMin"] == "2026-10-15T10:00:00+02:00"
+
+
+def test_slot_outside_business_hours_is_unavailable(monkeypatch):
+    sent = {}
+    _fake_freebusy(monkeypatch, [], sent)
+
+    assert calendar.is_slot_available("2026-10-15T22:00:00", vertical="despacho") is False
+    assert calendar.is_slot_available("2026-10-17T11:00:00", vertical="despacho") is False  # sábado

@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import httpx
 from google.auth.transport.requests import Request as GoogleAuthRequest
@@ -94,6 +95,40 @@ def _raise_for_google_error(response: httpx.Response) -> None:
     response.raise_for_status()
 
 
+def _calendar_time_zone_name() -> str:
+    return os.getenv("GOOGLE_CALENDAR_TIMEZONE", "Europe/Madrid")
+
+
+def _to_rfc3339(moment: datetime) -> str:
+    """
+    freeBusy exige fechas RFC3339 con zona horaria. Las citas llegan como
+    hora local sin zona ("2026-10-15T10:00:00"), así que se les pone la del
+    calendario; sin ella Google responde 400 Bad Request.
+    """
+
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=ZoneInfo(_calendar_time_zone_name()))
+
+    return moment.isoformat()
+
+
+def _from_google_time(value: str, like: datetime) -> datetime:
+    """
+    Convierte una fecha de Google (ej. "2026-10-15T08:00:00Z") a la misma
+    forma que `like`: hora local sin zona si la cita no la trae, para que
+    ambas se puedan comparar.
+    """
+
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+    if like.tzinfo is None:
+        return parsed.astimezone(
+            ZoneInfo(_calendar_time_zone_name())
+        ).replace(tzinfo=None)
+
+    return parsed
+
+
 def _post_calendar_event(
     calendar_id: str,
     summary: str,
@@ -102,7 +137,7 @@ def _post_calendar_event(
     attendees: list[dict],
 ) -> str:
     access_token = _get_access_token()
-    time_zone = os.getenv("GOOGLE_CALENDAR_TIMEZONE", "Europe/Madrid")
+    time_zone = _calendar_time_zone_name()
 
     start_dt = datetime.fromisoformat(scheduled_at)
     end_dt = start_dt + VISIT_DURATION
@@ -265,8 +300,9 @@ def _get_busy_periods(
         "https://www.googleapis.com/calendar/v3/freeBusy",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "timeMin": window_start.isoformat(),
-            "timeMax": window_end.isoformat(),
+            "timeMin": _to_rfc3339(window_start),
+            "timeMax": _to_rfc3339(window_end),
+            "timeZone": _calendar_time_zone_name(),
             "items": [{"id": calendar_id}],
         },
         timeout=10,
@@ -277,8 +313,8 @@ def _get_busy_periods(
 
     return [
         (
-            datetime.fromisoformat(period["start"]),
-            datetime.fromisoformat(period["end"]),
+            _from_google_time(period["start"], window_start),
+            _from_google_time(period["end"], window_start),
         )
         for period in busy_data
     ]
